@@ -15,6 +15,28 @@ URL = "https://api.telegram.org/bot%s/" % BOT_TOKEN
 MyURL = "https://dzzzr-bot.appspot.com"
 
 
+def set_dzzzr(url, captain, password, login, lpassword, chat_id):
+    app.browser = Session()
+    app.dzzzr_url = url
+    app.browser.headers.update({'referer': app.dzzzr_url})
+    app.browser.auth=(captain, password)
+    login_page = app.browser.post(
+        app.dzzzr_url,
+        data={'login': login,
+              'password': lpassword,
+              'action': "auth", 'notags': ''})
+    if login_page.status_code != 200:
+        return {
+            'chat_id': chat_id,
+            'text': "Not authorized"
+        }
+    else:
+        return {
+            'chat_id': chat_id,
+            'text': "Welcome %s" % login
+        }
+    
+
 def error():
     return 'Hello World! I am DR bot (https://telegram.me/DzzzzR_bot)'
 
@@ -70,7 +92,7 @@ def index():
 
                     send_reply(response)
                 else:
-                    response = CMD["/code"](None, message)
+                    response = CMD["#code"](None, message, app.browser, app.dzzzr_url)
                     if response:
                         send_reply(response)
 

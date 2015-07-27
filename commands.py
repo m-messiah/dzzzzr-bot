@@ -3,7 +3,8 @@ from re import findall
 
 __author__ = 'm_messiah'
 from base64 import b64decode, b64encode
-
+from requests import Session
+from re import findall
 
 def start(_, message):
     return {'chat_id': message['chat']['id'], 'text': "I am awake!"}
@@ -44,24 +45,28 @@ def help_message(_, message):
     return response
 
 
-def parse_code(_, message):
-    response = {'chat_id': message['chat']['id']}
+def parse_code(_, message, browser, url):
+    response = {'chat_id': message['chat']['id'],
+                'reply_to_message_id': message['message_id']}
     codes = findall(ur"[0-9]*[dDдД][0-9]*[rRрР][0-9]*", message["text"])
     result = []
     if len(codes):
         for code in codes:
             code = code.upper().translate({ord(u'Д'): u'D', ord(u'Р'): u'R'})
-            result.append("%s - %s" % (code, send(code)))
+            result.append("%s - %s" % (code, send(browser, url, code)))
         response['text'] = u"\n".join(sorted(result)).encode("utf8")
         return response
     else:
         return None
 
 
-def send(code):
-    # TODO: send code to DR engine
-    # TODO: parse answer
-    return u"принят"
+def send(browser, url, code):
+    answer = browser.post(url,
+                          data={'action': "entcod",
+                                'cod': code})
+    message = findall(r"<div class=sysmsg style='text-align:center'>(.+?)<",
+                      answer.text)
+    return u"/n".join(message)
 
 
 CMD = {
@@ -69,5 +74,5 @@ CMD = {
     "/base64": base64_code,
     "/help": help_message,
     "/start": start,
-    "/code": parse_code,
+    "#code": parse_code,
 }
