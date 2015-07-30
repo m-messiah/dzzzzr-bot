@@ -1,10 +1,8 @@
 # coding=utf-8
-from re import findall
-
 __author__ = 'm_messiah'
 from base64 import b64decode, b64encode
-from requests import Session
-from re import findall
+from re import findall, sub
+
 
 def start(_, message):
     return {'chat_id': message['chat']['id'], 'text': "I am awake!"}
@@ -53,7 +51,7 @@ def parse_code(_, message, browser, url):
     if len(codes):
         for code in codes:
             code = code.upper().translate({ord(u'Д'): u'D', ord(u'Р'): u'R'})
-            result.append("%s - %s" % (code, send(browser, url, code)))
+            result.append(send(browser, url, code))
         response['text'] = u"\n".join(sorted(result)).encode("utf8")
         return response
     else:
@@ -66,7 +64,8 @@ def send(browser, url, code):
                                 'cod': code})
     message = findall(r"<div class=sysmsg style='text-align:center'>(.+?)<",
                       answer.text)
-    return u"/n".join(message)
+    return u"/n".join(map(lambda m: sub('<[^<]+?>', '', m), message))
+
 
 
 CMD = {

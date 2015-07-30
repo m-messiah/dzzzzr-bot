@@ -2,40 +2,53 @@ from os import environ
 import urllib
 from flask import Flask, request, jsonify, json
 from google.appengine.api import urlfetch
+from requests import Session
 app = Flask(__name__)
 app.config['DEBUG'] = True
+app.browser = Session()
+app.dzzzr_url = ""
+
 from commands import CMD
 
 try:
-    from bot_token import BOT_TOKEN
+    from bot_token import BOT_TOKEN, DR_LOGIN, DR_PASSWORD
 except ImportError:
     BOT_TOKEN = environ["TOKEN"]
+    DR_LOGIN = environ["DR_LOGIN"]
+    DR_PASSWORD = environ["DR_PASSWORD"]
 
 URL = "https://api.telegram.org/bot%s/" % BOT_TOKEN
 MyURL = "https://dzzzr-bot.appspot.com"
 
 
-def set_dzzzr(url, captain, password, login, lpassword, chat_id):
-    app.browser = Session()
-    app.dzzzr_url = url
-    app.browser.headers.update({'referer': app.dzzzr_url})
-    app.browser.auth=(captain, password)
-    login_page = app.browser.post(
-        app.dzzzr_url,
-        data={'login': login,
-              'password': lpassword,
-              'action': "auth", 'notags': ''})
-    if login_page.status_code != 200:
+def set_dzzzr(arguments, chat_id):
+    try:
+        url, captain, password = arguments.split()
+    except ValueError:
         return {
             'chat_id': chat_id,
-            'text': "Not authorized"
+            'text': "Usage: /set_dzzzr url captain password"
         }
     else:
-        return {
-            'chat_id': chat_id,
-            'text': "Welcome %s" % login
-        }
-    
+        app.dzzzr_url = url
+        app.browser.headers.update({'referer': app.dzzzr_url})
+        app.browser.auth = (captain, password)
+        login_page = app.browser.post(
+            app.dzzzr_url,
+            data={'login': DR_LOGIN,
+                  'password': DR_PASSWORD,
+                  'action': "auth", 'notags': ''})
+        if login_page.status_code != 200:
+            return {
+                'chat_id': chat_id,
+                'text': "Not authorized"
+            }
+        else:
+            return {
+                'chat_id': chat_id,
+                'text': "Welcome %s" % DR_LOGIN
+            }
+
 
 def error():
     return 'Hello World! I am DR bot (https://telegram.me/DzzzzR_bot)'
@@ -88,11 +101,20 @@ def index():
                                      sender['id'],
                                      command.encode("utf8"),
                                      arguments.encode("utf8"))
-                    response = CMD.get(command, not_found)(arguments, message)
+                    if command == "/set_dzzzr":
+                        if str(sender['id']) == "3798371":
+                            response = set_dzzzr(arguments, sender['id'])
+                        else:
+                            response = {'chat_id': sender['id'],
+                                        'text': "Where is my master?"}
+                    else:
+                        response = CMD.get(command, not_found)(arguments,
+                                                               message)
 
                     send_reply(response)
                 else:
-                    response = CMD["#code"](None, message, app.browser, app.dzzzr_url)
+                    response = CMD["#code"](None, message,
+                                            app.browser, app.dzzzr_url)
                     if response:
                         send_reply(response)
 
