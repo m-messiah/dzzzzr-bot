@@ -49,7 +49,7 @@ def parse_code(_, message, browser, url):
     codes = findall(ur"[0-9]*[dDдД][0-9]*[rRрР][0-9]*", message["text"])
     result = []
     if url == "":
-        response['text'] = u"Сначала необходимо войти в движок (/set_dzzzr)"
+        response['text'] = u"Сначала необходимо войти в движок (/set_dzzzr)".encode("utf8")
         return response
     if len(codes):
         for code in codes:
