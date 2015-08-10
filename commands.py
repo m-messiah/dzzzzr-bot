@@ -62,7 +62,7 @@ def send(browser, url, code):
     answer = browser.post(url,
                           data={'action': "entcod",
                                 'cod': code})
-    message = findall(r"<div class=sysmsg style='text-align:center'>(.+?)<",
+    message = findall(ur">(.+? принят)<",
                       answer.text)
     return u"/n".join(map(lambda m: sub('<[^<]+?>', '', m), message))
 
