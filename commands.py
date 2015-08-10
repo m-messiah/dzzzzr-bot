@@ -48,6 +48,9 @@ def parse_code(_, message, browser, url):
                 'reply_to_message_id': message['message_id']}
     codes = findall(ur"[0-9]*[dDдД][0-9]*[rRрР][0-9]*", message["text"])
     result = []
+    if url == "":
+        response['text'] = u"Сначала необходимо войти в движок (/set_dzzzr)"
+        return response
     if len(codes):
         for code in codes:
             code = code.upper().translate({ord(u'Д'): u'D', ord(u'Р'): u'R'})
