@@ -8,6 +8,7 @@ app.config['DEBUG'] = False
 app.browser = Session()
 app.dzzzr_url = ""
 
+
 from commands import CMD
 
 try:
@@ -23,14 +24,15 @@ MyURL = "https://dzzzr-bot.appspot.com"
 
 def set_dzzzr(arguments, chat_id):
     try:
-        url, captain, password = arguments.split()
+        url, captain, password, prefix = arguments.split()
     except ValueError:
         return {
             'chat_id': chat_id,
-            'text': "Usage: /set_dzzzr url captain password"
+            'text': "Usage: /set_dzzzr url captain password prefix"
         }
     else:
         app.dzzzr_url = url
+        app.code_prefix = prefix
         app.browser.headers.update({'referer': app.dzzzr_url})
         app.browser.auth = (captain, password)
         login_page = app.browser.post(
@@ -88,6 +90,7 @@ def index():
             return error()
         app.logger.debug("Request: %s", request)
         try:
+        
             update = request.json
             message = update['message']
             sender = message['chat']
@@ -116,16 +119,9 @@ def index():
                     send_reply(response)
                 else:
                     response = CMD["#code"](None, message,
-                                            app.browser, app.dzzzr_url)
+                                            app.browser, app.dzzzr_url, app.code_prefix)
                     if response:
                         send_reply(response)
-
-            elif message.get("sticker"):
-                send_reply({
-                    'chat_id': sender['id'],
-                    'text': "Sticker id = %s"
-                            % message["sticker"].get("file_id")
-                })
 
             return jsonify(result="OK", text="Accepted")
         except Exception as e:

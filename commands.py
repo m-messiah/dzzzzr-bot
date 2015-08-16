@@ -1,7 +1,8 @@
 # coding=utf-8
 __author__ = 'm_messiah'
 from base64 import b64decode, b64encode
-from re import findall, sub
+from re import findall, sub, UNICODE
+import zlib
 
 
 def start(_, message):
@@ -43,10 +44,10 @@ def help_message(_, message):
     return response
 
 
-def parse_code(_, message, browser, url):
+def parse_code(_, message, browser, url, prefix):
     response = {'chat_id': message['chat']['id'],
                 'reply_to_message_id': message['message_id']}
-    codes = findall(ur"[0-9]*[dDдД][0-9]*[rRрР][0-9]*", message["text"])
+    codes = findall(ur"[0-9]*[dDдД]?[0-9]*[rRрР][0-9]*\b", message["text"])
     result = []
     if url == "":
         response['text'] = u"Сначала необходимо войти в движок (/set_dzzzr)".encode("utf8")
@@ -54,8 +55,10 @@ def parse_code(_, message, browser, url):
     if len(codes):
         for code in codes:
             code = code.upper().translate({ord(u'Д'): u'D', ord(u'Р'): u'R'})
+            if "D" not in code:
+                code = prefix + code
             result.append(send(browser, url, code))
-        response['text'] = u"\n".join(sorted(result)).encode("utf8")
+        response['text'] = u"\n".join(result).encode("utf8")
         return response
     else:
         return None
@@ -65,9 +68,10 @@ def send(browser, url, code):
     answer = browser.post(url,
                           data={'action': "entcod",
                                 'cod': code})
-    message = findall(ur">(.+? принят)<",
-                      answer.text)
-    return u"/n".join(map(lambda m: sub('<[^<]+?>', '', m), message))
+    answer = zlib.decompress(answer.content, 16+zlib.MAX_WBITS).decode("cp1251", "ignore")
+    message = findall(ur"<div class=sysmsg style='text-align:center'>(.+?)<",
+                      answer, UNICODE)
+    return code + " - " + u"\n".join(map(lambda m: sub(ur'<[^<]+?>', '', m, UNICODE), message))
 
 
 
