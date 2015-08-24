@@ -7,6 +7,7 @@ app = Flask(__name__)
 app.config['DEBUG'] = False
 app.browser = Session()
 app.dzzzr_url = ""
+app.code_prefix = ""
 
 
 from commands import CMD
@@ -24,11 +25,18 @@ MyURL = "https://dzzzr-bot.appspot.com"
 
 def set_dzzzr(arguments, chat_id):
     try:
-        url, captain, password, prefix = arguments.split()
+        arguments = arguments.split()
+        if len(arguments) > 2:
+            url, captain, password = arguments[:3]
+        else:
+            raise ValueError
+
+        prefix = arguments[3] if len(arguments) > 3 else ""
+
     except ValueError:
         return {
             'chat_id': chat_id,
-            'text': "Usage: /set_dzzzr url captain password prefix"
+            'text': "Usage: /set_dzzzr url captain password [prefix]"
         }
     else:
         app.dzzzr_url = url
@@ -119,7 +127,9 @@ def index():
                     send_reply(response)
                 else:
                     response = CMD["#code"](None, message,
-                                            app.browser, app.dzzzr_url, app.code_prefix)
+                                            app.browser,
+                                            app.dzzzr_url,
+                                            app.code_prefix)
                     if response:
                         send_reply(response)
 

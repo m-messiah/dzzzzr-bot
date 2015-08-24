@@ -1,8 +1,10 @@
 # coding=utf-8
+from bs4 import BeautifulSoup
+
 __author__ = 'm_messiah'
 from base64 import b64decode, b64encode
 from re import findall, sub, UNICODE
-import zlib
+from zlib import decompress, MAX_WBITS
 
 
 def start(_, message):
@@ -50,7 +52,8 @@ def parse_code(_, message, browser, url, prefix):
     codes = findall(ur"[0-9]*[dDдД]?[0-9]*[rRрР][0-9]*\b", message["text"])
     result = []
     if url == "":
-        response['text'] = u"Сначала необходимо войти в движок (/set_dzzzr)".encode("utf8")
+        response['text'] = (u"Сначала необходимо войти в движок (/set_dzzzr)"
+                            .encode("utf8"))
         return response
     if len(codes):
         for code in codes:
@@ -68,11 +71,14 @@ def send(browser, url, code):
     answer = browser.post(url,
                           data={'action': "entcod",
                                 'cod': code})
-    answer = zlib.decompress(answer.content, 16+zlib.MAX_WBITS).decode("cp1251", "ignore")
-    message = findall(ur"<div class=sysmsg style='text-align:center'>(.+?)<",
-                      answer, UNICODE)
-    return code + " - " + u"\n".join(map(lambda m: sub(ur'<[^<]+?>', '', m, UNICODE), message))
+    answer = BeautifulSoup(
+        decompress(answer.content, 16 + MAX_WBITS)
+        .decode("cp1251", "ignore"),
+        'html.parser'
+    )
 
+    message = answer.find(class_="sysmsg")
+    return code + " - " + message.find("b").string
 
 
 CMD = {
