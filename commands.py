@@ -71,6 +71,8 @@ def send(browser, url, code):
     answer = browser.post(url,
                           data={'action': "entcod",
                                 'cod': code})
+    if not answer:
+        return ""
     answer = BeautifulSoup(
         decompress(answer.content, 16 + MAX_WBITS)
         .decode("cp1251", "ignore"),

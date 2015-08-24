@@ -116,7 +116,11 @@ def index():
                                      arguments.encode("utf8"))
                     if command == "/set_dzzzr":
                         if str(sender['id']) == "3798371":
-                            response = set_dzzzr(arguments, sender['id'])
+                            try:
+                                response = set_dzzzr(arguments, sender['id'])
+                            except Exception as e:
+                                response = {'chat_id': sender['id'],
+                                            'text': "Incorrect format (%s)" % e}
                         else:
                             response = {'chat_id': sender['id'],
                                         'text': "Where is my master?"}
