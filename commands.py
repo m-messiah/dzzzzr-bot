@@ -3,9 +3,10 @@ from bs4 import BeautifulSoup
 
 __author__ = 'm_messiah'
 from base64 import b64decode, b64encode
-from re import findall, search
+from re import compile as re_compile
 from zlib import decompress, MAX_WBITS
 
+dr_code = re_compile(ur"^[0-9]*[dDдД]?[0-9]*[rRрР][0-9]*$")
 
 def start(_, message):
     return {'chat_id': message['chat']['id'], 'text': "I am awake!"}
@@ -49,22 +50,17 @@ def help_message(_, message):
 def parse_code(_, message, browser, url, prefix):
     response = {'chat_id': message['chat']['id'],
                 'reply_to_message_id': message['message_id']}
-    codes = findall(ur"[0-9]*[dDдД]?[0-9]*[rRрР][0-9]*\b", message["text"])
+
+    codes = message['text'].split()
     result = []
-
-    if len(codes):
-        if url == "":
-            response['text'] = (
-                u"Сначала необходимо войти в движок (/set_dzzzr)"
-                .encode("utf8")
-            )
-            return response
-
-        for code in codes:
-            code = code.upper().translate({ord(u'Д'): u'D', ord(u'Р'): u'R'})
+    for code in codes:
+        if dr_code.match(code):
+            code = code.upper().translate({ord(u'Д'): u'D',
+                                           ord(u'Р'): u'R'})
             if "D" not in code:
                 code = prefix + code
             result.append(send(browser, url, code))
+    if len(result):
         response['text'] = u"\n".join(result).encode("utf8")
         return response
     else:
@@ -80,6 +76,8 @@ def parse_code(_, message, browser, url, prefix):
 
 
 def send(browser, url, code):
+    if url == "":
+        return code + u" - сначала надо войти в движок"
     answer = browser.post(url,
                           data={'action': "entcod",
                                 'cod': code})
