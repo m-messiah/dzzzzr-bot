@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 
 __author__ = 'm_messiah'
 from base64 import b64decode, b64encode
-from re import findall, sub, UNICODE
+from re import findall, search
 from zlib import decompress, MAX_WBITS
 
 
@@ -51,11 +51,15 @@ def parse_code(_, message, browser, url, prefix):
                 'reply_to_message_id': message['message_id']}
     codes = findall(ur"[0-9]*[dDдД]?[0-9]*[rRрР][0-9]*\b", message["text"])
     result = []
-    if url == "":
-        response['text'] = (u"Сначала необходимо войти в движок (/set_dzzzr)"
-                            .encode("utf8"))
-        return response
+
     if len(codes):
+        if url == "":
+            response['text'] = (
+                u"Сначала необходимо войти в движок (/set_dzzzr)"
+                .encode("utf8")
+            )
+            return response
+
         for code in codes:
             code = code.upper().translate({ord(u'Д'): u'D', ord(u'Р'): u'R'})
             if "D" not in code:
@@ -64,6 +68,14 @@ def parse_code(_, message, browser, url, prefix):
         response['text'] = u"\n".join(result).encode("utf8")
         return response
     else:
+        if u" бот" in message["text"][-5:]:
+            response['text'] = u"хуебот".encode("utf8")
+            return response
+
+        if u"Привет" in message["text"]:
+            response['text'] = u"Привет!".encode("utf8")
+            return response
+
         return None
 
 
@@ -80,7 +92,7 @@ def send(browser, url, code):
     )
 
     message = answer.find(class_="sysmsg")
-    return code + " - " + message.find("b").string
+    return code + " - " + message.string
 
 
 CMD = {
