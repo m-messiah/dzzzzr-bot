@@ -90,7 +90,7 @@ def send(browser, url, code):
     )
 
     message = answer.find(class_="sysmsg")
-    return code + " - " + (message.string if message
+    return code + " - " + (message.string if message and message.string
                                           else u"нет ответа.")
 
 
