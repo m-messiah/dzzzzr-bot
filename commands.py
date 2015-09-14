@@ -82,7 +82,7 @@ def send(browser, url, code):
                           data={'action': "entcod",
                                 'cod': code})
     if not answer:
-        return ""
+        return code + u" - Нет ответа. Проверьте вручную."
     answer = BeautifulSoup(
         decompress(answer.content, 16 + MAX_WBITS)
         .decode("cp1251", "ignore"),
@@ -90,7 +90,8 @@ def send(browser, url, code):
     )
 
     message = answer.find(class_="sysmsg")
-    return code + " - " + message.string
+    return code + " - " + (message.string if message
+                                          else u"нет ответа.")
 
 
 CMD = {
