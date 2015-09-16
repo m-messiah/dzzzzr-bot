@@ -5,7 +5,12 @@ import urllib
 from zlib import decompress, MAX_WBITS
 from bs4 import BeautifulSoup
 from flask import Flask, request, jsonify
-from google.appengine.api import urlfetch
+try:
+    from google.appengine.api import urlfetch
+except ImportError:
+    print "App configured for GAE"
+
+
 from requests import Session
 from re import compile as re_compile
 
@@ -120,7 +125,7 @@ class DozoR(object):
             if response:
                 return response
 
-    def code(self, text, reply_id):
+    def code(self, text, reply_id=None):
         def send(browser, url, code):
             if url == "":
                 return code + u" - сначала надо войти в движок"
@@ -148,7 +153,7 @@ class DozoR(object):
             if dr_code.match(code):
                 code = code.upper().translate({ord(u'Д'): u'D',
                                                ord(u'Р'): u'R'})
-                if "D" not in code:
+                if u"D" not in code:
                     code = self.prefix + code
                 result.append(send(self.browser, self.url, code))
         if len(result):
@@ -198,16 +203,17 @@ def index():
         try:
             update = request.json
             message = update['message']
-            sender = message['chat']
+            chat = message['chat']
             text = message.get('text')
             if text:
                 app.logger.debug("MESSAGE FROM\t%s",
-                                 sender['username'] if 'username' in sender
-                                 else sender['id'])
-                if sender['id'] not in SESSIONS:
-                    SESSIONS[sender['id']] = DozoR(sender['id'])
+                                 chat['username'] if 'username' in chat
+                                 else chat['id'])
+                if chat['id'] not in SESSIONS:
+                    SESSIONS[chat['id']] = DozoR(chat['id'])
 
-                response = SESSIONS[sender['id']].handle(text)
+                response = SESSIONS[chat['id']].handle(text,
+                                                       reply_id=message['id'])
                 if response:
                     send_reply(response)
 
