@@ -35,12 +35,12 @@ class DozoR(object):
     def set_dzzzr(self, arguments):
         try:
             arguments = arguments.split()
-            if len(arguments) > 2:
+            if len(arguments) > 4:
                 self.url, captain, pin, login, password = arguments[:5]
             else:
                 raise ValueError
 
-            self.prefix = arguments[6] if len(arguments) > 5 else ""
+            self.prefix = arguments[5] if len(arguments) > 5 else ""
 
         except ValueError:
             return {
