@@ -138,9 +138,8 @@ class DozoR(object):
                 .decode("cp1251", "ignore"),
                 'html.parser'
             )
-
             message = answer.find(class_="sysmsg")
-            return code + " - " + (message.string if message and message.string
+            return code + " - " + (message.get_text() if message and message.get_text()
                                    else u"нет ответа.")
 
         response = {'chat_id': self.chat_id}
@@ -199,21 +198,18 @@ def index():
             return error()
         if request.headers['Content-Type'] != 'application/json':
             return error()
-        app.logger.debug("Request: %s", request)
         try:
             update = request.json
             message = update['message']
             chat = message['chat']
             text = message.get('text')
             if text:
-                app.logger.debug("MESSAGE FROM\t%s",
-                                 chat['username'] if 'username' in chat
-                                 else chat['id'])
+                app.logger.debug(message)
                 if chat['id'] not in SESSIONS:
                     SESSIONS[chat['id']] = DozoR(chat['id'])
 
-                response = SESSIONS[chat['id']].handle(text,
-                                                       reply_id=message['id'])
+                response = SESSIONS[chat['id']].handle(
+                    text, reply_id=message['message_id'])
                 if response:
                     send_reply(response)
 
