@@ -2,6 +2,7 @@
 from unittest import TestCase
 from main import DozoR
 
+
 class TestDozoR(TestCase):
     def test_set_dzzzr(self):
         d = DozoR(1)
@@ -45,6 +46,7 @@ class TestDozoR(TestCase):
 
     def test_code(self):
         d = DozoR(1)
+        d.enabled = True
         for prefix in [u"", u"27D"]:
             d.prefix = prefix
 
@@ -58,6 +60,6 @@ class TestDozoR(TestCase):
                          u"123Р6",
                          u"123Р"]:
                 result = d.code(code)['text']
-                self.assertIn("войти в движок",
+                self.assertIn(u"войти в движок",
                               result,
                               u"Code %s not parsed" % code)

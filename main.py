@@ -15,7 +15,7 @@ from requests import Session
 from re import compile as re_compile
 
 app = Flask(__name__)
-app.config['DEBUG'] = True
+app.config['DEBUG'] = False
 dr_code = re_compile(ur"^[0-9]*[dDдД]?[0-9]*[rRрР][0-9]*$")
 
 try:
@@ -25,6 +25,7 @@ except ImportError:
 
 
 SESSIONS = {}
+CREDENTIALS = {}
 
 URL = "https://api.telegram.org/bot%s/" % BOT_TOKEN
 MyURL = "https://dzzzr-bot.appspot.com"
@@ -35,6 +36,8 @@ class DozoR(object):
         self.chat_id = chat_id
         self.url = ""
         self.prefix = ""
+        self.credentials = ""
+        self.enabled = False
         self.browser = Session()
 
     def set_dzzzr(self, arguments):
@@ -50,10 +53,18 @@ class DozoR(object):
         except ValueError:
             return {
                 'chat_id': self.chat_id,
-                'text': "Usage: \n"
-                        "/set_dzzzr url captain pin login password [prefix]"
+                'text': u"Использование: \n"
+                        u"/set_dzzzr url captain pin login password [prefix]"
             }
         else:
+            if (self.url + captain + login) in CREDENTIALS:
+                return {
+                    'chat_id': self.chat_id,
+                    'text': u"Бот уже используется этой командой. "
+                            u"chat_id = %s"
+                            u"Сначала остановите его. (/stop)"
+                            % CREDENTIALS[self.url + captain + login]
+                }
             self.browser.headers.update({'referer': self.url})
             self.browser.auth = (captain, pin)
             login_page = self.browser.post(
@@ -64,34 +75,79 @@ class DozoR(object):
             if login_page.status_code != 200:
                 return {
                     'chat_id': self.chat_id,
-                    'text': "Not authorized"
+                    'text': u"Авторизация не удалась"
                 }
             else:
+                self.enabled = True
+                self.credentials = self.url + captain + login
+                CREDENTIALS[self.credentials] = self.chat_id
                 return {
                     'chat_id': self.chat_id,
-                    'text': "Welcome %s" % login
+                    'text': u"Добро пожаловать, %s" % login
                 }
 
     def not_found(self, _):
         return {
             'chat_id': self.chat_id,
-            'text': "Command not found. Try /help"
+            'text': "Команда не найдена. Используйте /help"
+        }
+
+    def help(self, _):
+        return {
+            'chat_id': self.chat_id,
+            'text': u"Я могу принимать следующие команды:\n"
+                    u"/help - эта справка\n"
+                    u"/about - информация об авторе\n"
+                    u"/base64 <text> - Base64 кодирование/раскодирование\n"
+                    u"/start - команда заглушка, эмулирующая начало общения\n"
+                    u"/stop - команда удаляющая сессию общения с ботом\n"
+                    u"DozoR\n"
+                    u"/set_dzzzr url captain pin login password [prefix] - "
+                    u"установить урл и учетные данные для движка DozoR. "
+                    u"Если все коды имеют префикс игры (например 27d), "
+                    u"то его можно указать здесь и отправлять коды уже "
+                    u"в сокращенном виде (12r3 = 27d12r3)\n"
+                    u"/pause - приостанавливает отправку кодов\n"
+                    u"/resume - возобновляет отправку кодов\n"
+                    u"\nСами коды могут пристуствовать в любом сообщении "
+                    u"в чате как с русскими буквами, так и английскими, "
+                    u"игнорируя регистр символов."
         }
 
     def start(self, _):
-        return {'chat_id': self.chat_id, 'text': "I am awake!"}
+        return {'chat_id': self.chat_id, 'text': u"Внимательно слушаю!"}
+
+    def pause(self, _):
+        self.enabled = False
+        return {'chat_id': self.chat_id,
+                'text': u"Ок, я больше не буду реагировать на сообщения мне "
+                        u"(не считая команды). "
+                        u"Не забудьте потом включить с помощью /resume"}
+
+    def resume(self, _):
+        self.enabled = True
+        return {'chat_id': self.chat_id,
+                'text': u"Я вернулся! Давайте ваши коды!"}
+
+    def stop(self, _):
+        self.enabled = False
+        del CREDENTIALS[self.credentials]
+        del SESSIONS[self.chat_id]
 
     def about(self, _):
         return {
             'chat_id': self.chat_id,
-            'text': "Hey!\n"
-                    "My author is @m_messiah."
-                    "You can find this nickname at:"
-                    "\t+ Telegram"
-                    "\t+ Twitter"
-                    "\t+ Instagram"
-                    "\t+ VK"
-                    "\t+ GitHub (m-messiah)"
+            'text': u"Привет!\n"
+                    u"Мой автор @m_messiah.\n"
+                    u"Вы можете написать ему в:\n"
+                    u"\t+ Telegram\n"
+                    u"\t+ Twitter\n"
+                    u"\t+ Instagram\n"
+                    u"\t+ VK\n"
+                    u"\t+ GitHub (m-messiah)\n"
+                    u"\nА еще принимаются пожертвования:\n"
+                    u"\t+ https://paypal.me/muzafarov\n"
+                    u"\t+ http://yasobe.ru/na/messiah\n"
         }
 
     def base64(self, arguments):
@@ -139,34 +195,38 @@ class DozoR(object):
                 'html.parser'
             )
             message = answer.find(class_="sysmsg")
-            return code + " - " + (message.get_text() if message and message.get_text()
+            return code + " - " + (message.get_text()
+                                   if message and message.get_text()
                                    else u"нет ответа.")
 
-        response = {'chat_id': self.chat_id}
-        if reply_id:
-            response['reply_to_message_id'] = reply_id
+        if self.enabled:
+            response = {'chat_id': self.chat_id}
 
-        codes = text.split()
-        result = []
-        for code in codes:
-            if dr_code.match(code):
-                code = code.upper().translate({ord(u'Д'): u'D',
-                                               ord(u'Р'): u'R'})
-                if u"D" not in code:
-                    code = self.prefix + code
-                result.append(send(self.browser, self.url, code))
-        if len(result):
-            response['text'] = u"\n".join(result).encode("utf8")
-            return response
+            codes = text.split()
+            result = []
+            for code in codes:
+                if dr_code.match(code):
+                    code = code.upper().translate({ord(u'Д'): u'D',
+                                                   ord(u'Р'): u'R'})
+                    if u"D" not in code:
+                        code = self.prefix + code
+                    result.append(send(self.browser, self.url, code))
+            if len(result):
+                response['text'] = u"\n".join(result)
+                if reply_id:
+                    response['reply_to_message_id'] = reply_id
+                return response
+            else:
+                if u" бот" in text[-5:]:
+                    response['text'] = u"хуебот"
+                    return response
+
+                if u"Привет" in text:
+                    response['text'] = u"Привет!"
+                    return response
+                return None
         else:
-            if u" бот" in text[-5:]:
-                response['text'] = u"хуебот".encode("utf8")
-                return response
-
-            if u"Привет" in text:
-                response['text'] = u"Привет!".encode("utf8")
-                return response
-            return None
+            pass
 
 
 def error():
@@ -174,6 +234,7 @@ def error():
 
 
 def send_reply(response):
+    response['text'] = response['text'].encode("utf8")
     app.logger.debug("SENT\t%s", response)
     payload = urllib.urlencode(response)
     if 'sticker' in response:
