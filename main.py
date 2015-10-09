@@ -57,13 +57,13 @@ class DozoR(object):
                         u"/set_dzzzr url captain pin login password [prefix]"
             }
         else:
-            if (self.url + captain + login) in CREDENTIALS:
+            if "|".join((self.url, captain, login)) in CREDENTIALS:
                 return {
                     'chat_id': self.chat_id,
                     'text': u"Бот уже используется этой командой. "
                             u"chat_id = %s"
                             u"Сначала остановите его. (/stop)"
-                            % CREDENTIALS[self.url + captain + login]
+                            % CREDENTIALS["|".join((self.url, captain, login))]
                 }
             self.browser.headers.update({'referer': self.url})
             self.browser.auth = (captain, pin)
@@ -79,17 +79,23 @@ class DozoR(object):
                 }
             else:
                 self.enabled = True
-                self.credentials = self.url + captain + login
+                self.credentials = "|".join((self.url, captain, login))
                 CREDENTIALS[self.credentials] = self.chat_id
                 return {
                     'chat_id': self.chat_id,
                     'text': u"Добро пожаловать, %s" % login
                 }
 
+    def show_sessions(self, _):
+        return {
+            'chat_id': self.chat_id,
+            'text': u"Сейчас используют:\n" + "\n".join(CREDENTIALS.keys())
+        }
+
     def not_found(self, _):
         return {
             'chat_id': self.chat_id,
-            'text': "Команда не найдена. Используйте /help"
+            'text': u"Команда не найдена. Используйте /help"
         }
 
     def help(self, _):
