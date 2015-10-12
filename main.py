@@ -16,7 +16,7 @@ from re import compile as re_compile
 
 app = Flask(__name__)
 app.config['DEBUG'] = False
-dr_code = re_compile(ur"^[0-9]*[dDдД]?[0-9]*[rRрР][0-9]*$")
+dr_code = re_compile(ur"^[0-9dDдДrRрР]+$")
 
 try:
     from bot_token import BOT_TOKEN
@@ -37,7 +37,7 @@ class DozoR(object):
         self.url = ""
         self.prefix = ""
         self.credentials = ""
-        self.enabled = False
+        self.enabled = True
         self.browser = Session()
 
     def set_dzzzr(self, arguments):
