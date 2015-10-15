@@ -214,7 +214,7 @@ class DozoR(object):
                 if dr_code.match(code):
                     code = code.upper().translate({ord(u'Д'): u'D',
                                                    ord(u'Р'): u'R'})
-                    if u"D" not in code:
+                    if self.prefix and self.prefix not in code:
                         code = self.prefix + code
                     result.append(send(self.browser, self.url, code))
             if len(result):

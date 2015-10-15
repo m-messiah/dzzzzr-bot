@@ -54,6 +54,8 @@ class TestDozoR(TestCase):
                          u"1д23р4",
                          u"D23R4",
                          u"1D234R",
+                         u"1D2D34R",
+                         u"1D23R4R",
                          u"D234R",
                          u"23R4",
                          u"23R",
