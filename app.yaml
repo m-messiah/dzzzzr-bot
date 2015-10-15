@@ -11,6 +11,6 @@ handlers:
 
 libraries:
 - name: jinja2
-  version: "2.8"
+  version: "2.6"
 - name: markupsafe
   version: "0.15"
