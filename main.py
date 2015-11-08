@@ -195,9 +195,12 @@ class DozoR(object):
                                              'cod': code})
             if not answer:
                 return code + u" - Нет ответа. Проверьте вручную."
+            try:
+                content = decompress(answer.content, 16 + MAX_WBITS)
+            except:
+                content = answer.content
             answer = BeautifulSoup(
-                decompress(answer.content, 16 + MAX_WBITS)
-                .decode("cp1251", "ignore"),
+                content.decode("cp1251", "ignore"),
                 'html.parser'
             )
             message = answer.find(class_="sysmsg")
