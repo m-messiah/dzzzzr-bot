@@ -149,7 +149,7 @@ class DozoR(object):
                     u"Контакты: https://m-messiah.ru\n"
                     u"\nА еще принимаются пожертвования:\n"
                     u"\t+ https://paypal.me/muzafarov\n"
-                    u"\t+ http://yasobe.ru/na/messiah\n"
+                    u"\t+ http://yasobe.ru/na/m_messiah\n"
         }
 
     def base64(self, arguments):
