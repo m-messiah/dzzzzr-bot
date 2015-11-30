@@ -143,14 +143,10 @@ class DozoR(object):
     def about(self, _):
         return {
             'chat_id': self.chat_id,
+            'disable_web_page_preview': True,
             'text': u"Привет!\n"
                     u"Мой автор @m_messiah.\n"
-                    u"Вы можете написать ему в:\n"
-                    u"\t+ Telegram\n"
-                    u"\t+ Twitter\n"
-                    u"\t+ Instagram\n"
-                    u"\t+ VK\n"
-                    u"\t+ GitHub (m-messiah)\n"
+                    u"Контакты: https://m-messiah.ru\n"
                     u"\nА еще принимаются пожертвования:\n"
                     u"\t+ https://paypal.me/muzafarov\n"
                     u"\t+ http://yasobe.ru/na/messiah\n"
