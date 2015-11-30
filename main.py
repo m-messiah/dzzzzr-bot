@@ -145,7 +145,7 @@ class DozoR(object):
             'chat_id': self.chat_id,
             'disable_web_page_preview': True,
             'text': u"Привет!\n"
-                    u"Мой автор @m_messiah.\n"
+                    u"Мой автор @m_messiah\n"
                     u"Контакты: https://m-messiah.ru\n"
                     u"\nА еще принимаются пожертвования:\n"
                     u"\t+ https://paypal.me/muzafarov\n"
