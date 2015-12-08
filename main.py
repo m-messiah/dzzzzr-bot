@@ -1,16 +1,9 @@
 # coding=utf-8
 from base64 import b64decode, b64encode
 from os import environ
-import urllib
 from zlib import decompress, MAX_WBITS
 from bs4 import BeautifulSoup
 from flask import Flask, request, jsonify
-try:
-    from google.appengine.api import urlfetch
-except ImportError:
-    print "App configured for GAE"
-
-
 from requests import Session
 from re import compile as re_compile
 
@@ -22,7 +15,6 @@ try:
     from bot_token import BOT_TOKEN
 except ImportError:
     BOT_TOKEN = environ["TOKEN"]
-
 
 SESSIONS = {}
 CREDENTIALS = {}
@@ -39,6 +31,7 @@ class DozoR(object):
         self.credentials = ""
         self.enabled = True
         self.browser = Session()
+        self.name = "@DzzzzR_bot"
 
     def set_dzzzr(self, arguments):
         try:
@@ -51,89 +44,71 @@ class DozoR(object):
             self.prefix = arguments[5] if len(arguments) > 5 else ""
 
         except ValueError:
-            return {
-                'chat_id': self.chat_id,
-                'text': u"Использование: \n"
-                        u"/set_dzzzr url captain pin login password [prefix]"
-            }
+            return (u"Использование:\n"
+                    u"/set_dzzzr url captain pin login password [prefix]")
         else:
             if "|".join((self.url, captain, login)) in CREDENTIALS:
-                return {
-                    'chat_id': self.chat_id,
-                    'text': u"Бот уже используется этой командой. "
-                            u"chat_id = %s"
-                            u"Сначала остановите его. (/stop)"
-                            % CREDENTIALS["|".join((self.url, captain, login))]
-                }
+                return (u"Бот уже используется этой командой. chat_id = %s\n"
+                        u"Сначала остановите его. (/stop)\n"
+                        % CREDENTIALS["|".join((self.url, captain, login))])
             self.browser.headers.update({'referer': self.url})
             self.browser.auth = (captain, pin)
             login_page = self.browser.post(
                 self.url,
-                data={'login': login,
-                      'password': password,
-                      'action': "auth", 'notags': ''})
-            if login_page.status_code != 200:
-                return {
-                    'chat_id': self.chat_id,
-                    'text': u"Авторизация не удалась"
+                data={
+                    'login': login,
+                    'password': password,
+                    'action': "auth",
+                    'notags': ''
                 }
+            )
+            if login_page.status_code != 200:
+                return u"Авторизация не удалась"
             else:
                 self.enabled = True
                 self.credentials = "|".join((self.url, captain, login))
                 CREDENTIALS[self.credentials] = self.chat_id
-                return {
-                    'chat_id': self.chat_id,
-                    'text': u"Добро пожаловать, %s" % login
-                }
+                return u"Добро пожаловать, %s" % login
 
     def show_sessions(self, _):
-        return {
-            'chat_id': self.chat_id,
-            'text': u"Сейчас используют:\n" + "\n".join(CREDENTIALS.keys())
-        }
+        return u"Сейчас используют:\n" + "\n".join(CREDENTIALS.keys())
 
     def not_found(self, _):
-        return {
-            'chat_id': self.chat_id,
-            'text': u"Команда не найдена. Используйте /help"
-        }
+        return u"Команда не найдена. Используйте /help"
 
     def help(self, _):
-        return {
-            'chat_id': self.chat_id,
-            'text': u"Я могу принимать следующие команды:\n"
-                    u"/help - эта справка\n"
-                    u"/about - информация об авторе\n"
-                    u"/base64 <text> - Base64 кодирование/раскодирование\n"
-                    u"/start - команда заглушка, эмулирующая начало общения\n"
-                    u"/stop - команда удаляющая сессию общения с ботом\n"
-                    u"DozoR\n"
-                    u"/set_dzzzr url captain pin login password [prefix] - "
-                    u"установить урл и учетные данные для движка DozoR. "
-                    u"Если все коды имеют префикс игры (например 27d), "
-                    u"то его можно указать здесь и отправлять коды уже "
-                    u"в сокращенном виде (12r3 = 27d12r3)\n"
-                    u"/pause - приостанавливает отправку кодов\n"
-                    u"/resume - возобновляет отправку кодов\n"
-                    u"\nСами коды могут пристуствовать в любом сообщении "
-                    u"в чате как с русскими буквами, так и английскими, "
-                    u"игнорируя регистр символов."
-        }
+        return (
+            u"Я могу принимать следующие команды:\n"
+            u"  /help - эта справка\n"
+            u"  /about - информация об авторе\n"
+            u"  /base64 <text> - Base64 кодирование/раскодирование\n"
+            u"  /start - команда заглушка, эмулирующая начало общения\n"
+            u"  /stop - команда удаляющая сессию общения с ботом\n"
+            u"\n  DozoR\n"
+            u"  /set_dzzzr url captain pin login password [prefix] - "
+            u"  установить урл и учетные данные для движка DozoR.\n"
+            u"  Если все коды имеют префикс игры (например 27d),"
+            u"то его можно указать здесь "
+            u"и отправлять коды уже в сокращенном виде (12r3 = 27d12r3)\n"
+            u"\n  /pause - приостанавливает отправку кодов\n"
+            u"  /resume - возобновляет отправку кодов\n"
+            u"\n  Сами коды могут пристуствовать в любом сообщении в чате\n"
+            u"  как с русскими буквами, так и английскими,\n"
+            u"  игнорируя регистр символов.\n"
+            u"  (Главное, чтобы сообщение начиналось с кода)")
 
     def start(self, _):
-        return {'chat_id': self.chat_id, 'text': u"Внимательно слушаю!"}
+        return u"Внимательно слушаю!"
 
     def pause(self, _):
         self.enabled = False
-        return {'chat_id': self.chat_id,
-                'text': u"Ок, я больше не буду реагировать на сообщения мне "
-                        u"(не считая команды). "
-                        u"Не забудьте потом включить с помощью /resume"}
+        return (u"Ок, я больше не буду реагировать на сообщения мне "
+                u"(не считая команды). "
+                u"Не забудьте потом включить с помощью /resume")
 
     def resume(self, _):
         self.enabled = True
-        return {'chat_id': self.chat_id,
-                'text': u"Я вернулся! Давайте ваши коды!"}
+        return u"Я вернулся! Давайте ваши коды!"
 
     def stop(self, _):
         self.enabled = False
@@ -141,49 +116,46 @@ class DozoR(object):
         del SESSIONS[self.chat_id]
 
     def about(self, _):
-        return {
-            'chat_id': self.chat_id,
-            'disable_web_page_preview': True,
-            'text': u"Привет!\n"
-                    u"Мой автор @m_messiah\n"
-                    u"Контакты: https://m-messiah.ru\n"
-                    u"\nА еще принимаются пожертвования:\n"
-                    u"\t+ https://paypal.me/muzafarov\n"
-                    u"\t+ http://yasobe.ru/na/m_messiah\n"
-        }
+        return (u"Привет!\n"
+                u"Мой автор @m_messiah\n"
+                u"Контакты: https://m-messiah.ru\n"
+                u"\nА еще принимаются пожертвования:\n"
+                u"  https://paypal.me/muzafarov\n"
+                u"  http://yasobe.ru/na/m_messiah")
 
     def base64(self, arguments):
-        response = {'chat_id': self.chat_id}
+        response = None
         try:
-            response['text'] = b64decode(arguments.encode("utf8"))
-            assert len(response['text'])
+            response = b64decode(arguments.encode("utf8"))
+            assert len(response)
         except:
-            response['text'] = b64encode(arguments.encode("utf8"))
+            response = b64encode(arguments.encode("utf8"))
         finally:
             return response
 
-    def handle(self, text, reply_id=None):
+    def handle(self, text):
         if text[0] == '/':
             command, _, arguments = text.partition(" ")
+            if self.name in command:
+                command = command[:command.find("@DzzzzR_bot")]
             app.logger.debug("REQUEST\t%s\t%s\t'%s'",
                              self.chat_id,
                              command.encode("utf8"),
                              arguments.encode("utf8"))
             if command == "/set_dzzzr":
-                #if str(sender['id']) == "3798371":
+                # if str(sender['id']) == "3798371":
                 try:
                     return self.set_dzzzr(arguments)
                 except Exception as e:
-                    return {'chat_id': self.chat_id,
-                            'text': "Incorrect format (%s)" % e}
+                    return "Incorrect format (%s)" % e
             else:
                 return getattr(self, command[1:], self.not_found)(arguments)
         else:
-            response = self.code(text, reply_id)
+            response = self.code(text)
             if response:
                 return response
 
-    def code(self, text, reply_id=None):
+    def code(self, text):
         def send(browser, url, code):
             if url == "":
                 return code + u" - сначала надо войти в движок"
@@ -205,30 +177,24 @@ class DozoR(object):
                                    else u"нет ответа.")
 
         if self.enabled:
-            response = {'chat_id': self.chat_id}
-
             codes = text.split()
             result = []
-            for code in codes:
-                if dr_code.match(code):
-                    code = code.upper().translate({ord(u'Д'): u'D',
-                                                   ord(u'Р'): u'R'})
-                    if self.prefix and self.prefix not in code:
-                        code = self.prefix + code
+            if dr_code.match(codes[0]):
+                for code in codes:
+                    if dr_code.match(code):
+                        code = code.upper().translate({ord(u'Д'): u'D',
+                                                       ord(u'Р'): u'R'})
+                        if self.prefix and self.prefix not in code:
+                            code = self.prefix + code
                     result.append(send(self.browser, self.url, code))
             if len(result):
-                response['text'] = u"\n".join(result)
-                if reply_id:
-                    response['reply_to_message_id'] = reply_id
-                return response
+                return u"\n".join(result)
             else:
                 if u" бот" in text[-5:]:
-                    response['text'] = u"хуебот"
-                    return response
+                    return u"хуебот"
 
-                if u"Привет" in text:
-                    response['text'] = u"Привет!"
-                    return response
+                if u"Привет" in text or u"привет" in text:
+                    return u"Привет!"
                 return None
         else:
             pass
@@ -236,23 +202,6 @@ class DozoR(object):
 
 def error():
     return 'Hello World! I am DR bot (https://telegram.me/DzzzzR_bot)'
-
-
-def send_reply(response):
-    response['text'] = response['text'].encode("utf8")
-    app.logger.debug("SENT\t%s", response)
-    payload = urllib.urlencode(response)
-    if 'sticker' in response:
-        urlfetch.fetch(url=URL + "sendSticker",
-                       payload=payload,
-                       method=urlfetch.POST)
-    elif 'text' in response:
-        if response['text'] == '':
-            return
-        o = urlfetch.fetch(URL + "sendMessage",
-                           payload=payload,
-                           method=urlfetch.POST)
-        app.logger.debug(str(o.content))
 
 
 @app.route('/', methods=['POST', 'GET'])
@@ -274,10 +223,15 @@ def index():
                 if chat['id'] not in SESSIONS:
                     SESSIONS[chat['id']] = DozoR(chat['id'])
 
-                response = SESSIONS[chat['id']].handle(
-                    text, reply_id=message['message_id'])
+                response = SESSIONS[chat['id']].handle(text)
                 if response:
-                    send_reply(response)
+                    return jsonify(
+                        method="sendMessage",
+                        chat_id=chat['id'],
+                        text=response,
+                        reply_to_message_id=message['message_id'],
+                        disable_web_page_preview=True,
+                    )
 
             return jsonify(result="OK", text="Accepted")
         except Exception as e:
@@ -289,4 +243,3 @@ def index():
 def page_not_found(e):
     """Return a custom 404 error."""
     return 'Sorry, nothing at this URL.', 404
-

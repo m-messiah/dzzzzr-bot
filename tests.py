@@ -10,39 +10,33 @@ class TestDozoR(TestCase):
             "http://classic.dzzzr.ru/spb/go/ spb_Captain 123456 bot"
         )
 
-        self.assertIn("/set_dzzzr", result['text'],
+        self.assertIn("/set_dzzzr", result,
                       "Accept not enough arguments")
         result = d.set_dzzzr(
             "http://classic.dzzzr.ru/spb/go/ spb_Captain 123456 "
             "bot botpassword 1D"
         )
-        self.assertNotIn("/set_dzzzr", result['text'],
+        self.assertNotIn("/set_dzzzr", result,
                          "Arguments with prefix bad splitted")
         self.assertEqual("1D", d.prefix)
 
     def test_not_found(self):
         d = DozoR(1)
-        self.assertEqual(1, d.not_found(0)['chat_id'],
-                         "Chat ID not equals")
+        self.assertIsNotNone(d.not_found("1"))
 
     def test_start(self):
         d = DozoR(1)
-        self.assertEqual(1, d.start(0)['chat_id'],
-                         "Chat ID not equals")
+        self.assertIsNotNone(d.start("1"))
 
     def test_about(self):
         d = DozoR(1)
-        self.assertEqual(1, d.about(0)['chat_id'],
-                         "Chat ID not equals")
-        self.assertIn("m_messiah", d.about(0)['text'],
-                      "Author lost")
+        self.assertIsNotNone(d.about("1"))
+        self.assertIn("m_messiah", d.about("0"), "Author lost")
 
     def test_base64(self):
         d = DozoR(1)
-        self.assertEqual("0J/RgNC40LLQtdGC",
-                         d.base64(u"Привет")['text'])
-        self.assertEqual("Привет",
-                         d.base64(u"0J/RgNC40LLQtdGC")['text'])
+        self.assertEqual("0J/RgNC40LLQtdGC", d.base64(u"Привет"))
+        self.assertEqual("Привет", d.base64(u"0J/RgNC40LLQtdGC"))
 
     def test_code(self):
         d = DozoR(1)
@@ -61,7 +55,7 @@ class TestDozoR(TestCase):
                          u"23R",
                          u"123Р6",
                          u"123Р"]:
-                result = d.code(code)['text']
+                result = d.code(code)
                 self.assertIn(u"войти в движок",
                               result,
                               u"Code %s not parsed" % code)
