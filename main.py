@@ -22,6 +22,13 @@ CREDENTIALS = {}
 URL = "https://api.telegram.org/bot%s/" % BOT_TOKEN
 MyURL = "https://dzzzr-bot.appspot.com"
 
+RUS = (1072, 1073, 1074, 1075, 1076, 1077, 1105, 1078, 1079, 1080, 1081, 1082,
+       1083, 1084, 1085, 1086, 1087, 1088, 1089, 1090, 1091, 1092, 1093, 1094,
+       1095, 1096, 1097, 1098, 1099, 1100, 1101, 1102, 1103)
+
+ENG = (97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111,
+       112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122)
+
 
 class DozoR(object):
     def __init__(self, chat_id):
@@ -79,23 +86,25 @@ class DozoR(object):
     def help(self, _):
         return (
             u"Я могу принимать следующие команды:\n"
-            u"  /help - эта справка\n"
-            u"  /about - информация об авторе\n"
-            u"  /base64 <text> - Base64 кодирование/раскодирование\n"
-            u"  /start - команда заглушка, эмулирующая начало общения\n"
-            u"  /stop - команда удаляющая сессию общения с ботом\n"
-            u"\n  DozoR\n"
-            u"  /set_dzzzr url captain pin login password [prefix] - "
+            u"/help - эта справка\n"
+            u"/about - информация об авторе\n"
+            u"/base64 <text> - Base64 кодирование/раскодирование\n"
+            u"/pos <num1 num2 numN> - Слово из порядковых букв в алфавите\n"
+            u"/gps <lat, long> - Карта по координатам\n"
+            u"/start - команда заглушка, эмулирующая начало общения\n"
+            u"/stop - команда удаляющая сессию общения с ботом\n"
+            u"\nDozoR\n"
+            u"/set_dzzzr url captain pin login password [prefix] - "
             u"  установить урл и учетные данные для движка DozoR.\n"
-            u"  Если все коды имеют префикс игры (например 27d),"
+            u"Если все коды имеют префикс игры (например 27d),"
             u"то его можно указать здесь "
             u"и отправлять коды уже в сокращенном виде (12r3 = 27d12r3)\n"
-            u"\n  /pause - приостанавливает отправку кодов\n"
-            u"  /resume - возобновляет отправку кодов\n"
-            u"\n  Сами коды могут пристуствовать в любом сообщении в чате\n"
-            u"  как с русскими буквами, так и английскими,\n"
-            u"  игнорируя регистр символов.\n"
-            u"  (Главное, чтобы сообщение начиналось с кода)")
+            u"\n/pause - приостанавливает отправку кодов\n"
+            u"/resume - возобновляет отправку кодов\n"
+            u"\nСами коды могут пристуствовать в любом сообщении в чате "
+            u"как с русскими буквами, так и английскими, "
+            u"игнорируя регистр символов. "
+            u"(Главное, чтобы сообщение начиналось с кода)")
 
     def start(self, _):
         return u"Внимательно слушаю!"
@@ -118,10 +127,10 @@ class DozoR(object):
     def about(self, _):
         return (u"Привет!\n"
                 u"Мой автор @m_messiah\n"
-                u"Контакты: https://m-messiah.ru\n"
+                u"Сайт: https://m-messiah.ru\n"
                 u"\nА еще принимаются пожертвования:\n"
-                u"  https://paypal.me/muzafarov\n"
-                u"  http://yasobe.ru/na/m_messiah")
+                u"https://paypal.me/muzafarov\n"
+                u"http://yasobe.ru/na/m_messiah")
 
     def base64(self, arguments):
         response = None
@@ -132,6 +141,41 @@ class DozoR(object):
             response = b64encode(arguments.encode("utf8"))
         finally:
             return response
+
+    def pos(self, text):
+        positions = list(map(int, text.split()))
+
+        return u"\n".join((
+            u"".join(map(lambda i: unichr(RUS[(i - 1) % 33]), positions)),
+            u"".join(map(lambda i: unichr(ENG[(i - 1) % 26]), positions))
+        ))
+
+    def gps(self, text):
+        raw_coords = text.split(",")
+        coords = [0, [[], []]]
+        for i, lat in enumerate(raw_coords):
+            lat = lat.split()
+            count = len(lat)
+            if count > coords[0]:
+                coords[0] = count
+            coords[1][i] = lat
+        if coords[0] == 1:
+            return tuple(map(lambda x: round(float(x[0]), 6), coords[1]))
+        if coords[0] == 2:
+            result = []
+            for lat in coords[1]:
+                d, m = map(float, lat[:2])
+                result.append(round(d + m / 60 * (-1 if d < 0 else 1), 6))
+            return tuple(result)
+        if coords[0] == 3:
+            result = []
+            for lat in coords[1]:
+                d, m, s = map(float, lat[:3])
+                result.append(
+                    round(d + (m * 60 + s) / 3600 * (-1 if d < 0 else 1), 6)
+                )
+            return tuple(result)
+        return u"Неправильные координаты"
 
     def handle(self, text):
         if text[0] == '/':
@@ -224,6 +268,14 @@ def index():
                     SESSIONS[chat['id']] = DozoR(chat['id'])
 
                 response = SESSIONS[chat['id']].handle(text)
+                if isinstance(response, tuple):
+                    return jsonify(
+                        method="sendLocation",
+                        chat_id=chat['id'],
+                        reply_to_message_id=message['message_id'],
+                        latitude=response[0],
+                        longitude=response[1],
+                    )
                 if response:
                     return jsonify(
                         method="sendMessage",

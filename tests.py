@@ -38,6 +38,22 @@ class TestDozoR(TestCase):
         self.assertEqual("0J/RgNC40LLQtdGC", d.base64(u"Привет"))
         self.assertEqual("Привет", d.base64(u"0J/RgNC40LLQtdGC"))
 
+    def test_pos(self):
+        d = DozoR(1)
+        self.assertIn(u"абвя", d.pos(u"1 2 3 33"))
+        self.assertIn(u"abcg", d.pos(u"1 2 3 33"))
+
+    def test_gps(self):
+        d = DozoR(1)
+        eta = (56.847222, 60.675)
+        dd = u"56.847222, 60.675"
+        dmr = u"56 50.8333, 60 40.5"
+        dmsr = u"56 50 50, 60 40 30"
+        self.assertEqual(d.gps(dd), eta)
+        self.assertEqual(d.gps(dmr), eta)
+        self.assertEqual(d.gps(dmsr), eta)
+
+
     def test_code(self):
         d = DozoR(1)
         d.enabled = True
