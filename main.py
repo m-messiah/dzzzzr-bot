@@ -1,26 +1,21 @@
 # coding=utf-8
+import logging
 from base64 import b64decode, b64encode
-from os import environ
-from zlib import decompress, MAX_WBITS
-from bs4 import BeautifulSoup
-from flask import Flask, request, jsonify
-from requests import Session
 from re import compile as re_compile
+from zlib import decompress, MAX_WBITS
 
-app = Flask(__name__)
-app.config['DEBUG'] = False
+import webapp2
+from bs4 import BeautifulSoup
+from requests import Session
+from webapp2_extras import json
+
+__author__ = 'm_messiah'
+__url__ = "https://dzzzr-bot.appspot.com"
+
 dr_code = re_compile(ur"^[0-9dDдДrRрР]+$")
-
-try:
-    from bot_token import BOT_TOKEN
-except ImportError:
-    BOT_TOKEN = environ["TOKEN"]
 
 SESSIONS = {}
 CREDENTIALS = {}
-
-URL = "https://api.telegram.org/bot%s/" % BOT_TOKEN
-MyURL = "https://dzzzr-bot.appspot.com"
 
 RUS = (1072, 1073, 1074, 1075, 1076, 1077, 1105, 1078, 1079, 1080, 1081, 1082,
        1083, 1084, 1085, 1086, 1087, 1088, 1089, 1090, 1091, 1092, 1093, 1094,
@@ -123,6 +118,7 @@ class DozoR(object):
         self.enabled = False
         del CREDENTIALS[self.credentials]
         del SESSIONS[self.chat_id]
+        return u"До новых встреч!"
 
     def about(self, _):
         return (u"Привет!\n"
@@ -182,7 +178,7 @@ class DozoR(object):
             command, _, arguments = text.partition(" ")
             if self.name in command:
                 command = command[:command.find("@DzzzzR_bot")]
-            app.logger.debug("REQUEST\t%s\t%s\t'%s'",
+            logging.debug("REQUEST\t%s\t%s\t'%s'",
                              self.chat_id,
                              command.encode("utf8"),
                              arguments.encode("utf8"))
@@ -244,54 +240,57 @@ class DozoR(object):
             pass
 
 
-def error():
-    return 'Hello World! I am DR bot (https://telegram.me/DzzzzR_bot)'
+class MainPage(webapp2.RequestHandler):
+    def show_error(self):
+        self.response.headers['Content-Type'] = 'application/json'
+        self.response.write(json.encode({
+            'result': "Info",
+            "name": "I am DR bot (https://telegram.me/DzzzzR_bot)"
+        }))
 
+    def get(self):
+        return self.show_error()
 
-@app.route('/', methods=['POST', 'GET'])
-def index():
-    if request.method == 'GET':
-        return error()
-    else:
-        if 'Content-Type' not in request.headers:
-            return error()
-        if request.headers['Content-Type'] != 'application/json':
-            return error()
+    def post(self):
+        if 'Content-Type' not in self.request.headers:
+            return self.show_error()
+        if 'application/json' not in self.request.headers['Content-Type']:
+            return self.show_error()
         try:
-            update = request.json
-            message = update['message']
-            chat = message['chat']
-            text = message.get('text')
-            if text:
-                app.logger.debug(message)
-                if chat['id'] not in SESSIONS:
-                    SESSIONS[chat['id']] = DozoR(chat['id'])
+            update = json.decode(self.request.body)
+        except Exception:
+            return self.show_error()
+        message = update['message']
+        sender = message['chat']['id']
+        text = message.get('text')
+        if text:
+            logging.debug(message)
+            response = None
+            if sender not in SESSIONS:
+                SESSIONS[sender] = DozoR(sender)
 
-                response = SESSIONS[chat['id']].handle(text)
-                if isinstance(response, tuple):
-                    return jsonify(
-                        method="sendLocation",
-                        chat_id=chat['id'],
-                        reply_to_message_id=message['message_id'],
-                        latitude=response[0],
-                        longitude=response[1],
-                    )
-                if response:
-                    return jsonify(
-                        method="sendMessage",
-                        chat_id=chat['id'],
-                        text=response,
-                        reply_to_message_id=message['message_id'],
-                        disable_web_page_preview=True,
-                    )
+            output = SESSIONS[sender].handle(text)
+            if isinstance(output, tuple):
+                response = {'method': "sendLocation",
+                            'chat_id': sender,
+                            'reply_to_message_id': message['message_id'],
+                            'latitude': output[0],
+                            'longitude': output[1]}
+            elif output:
+                response = {'method': "sendMessage",
+                            'chat_id': sender,
+                            'text': output,
+                            'reply_to_message_id': message['message_id'],
+                            'disable_web_page_preview': True}
 
-            return jsonify(result="OK", text="Accepted")
-        except Exception as e:
-            app.logger.warning(str(e))
-            return jsonify(result="Fail", text=str(e))
+            if response:
+                self.response.headers['Content-Type'] = 'application/json'
+                self.response.write(json.encode(response))
+            else:
+                self.show_error()
 
 
-@app.errorhandler(404)
-def page_not_found(e):
-    """Return a custom 404 error."""
-    return 'Sorry, nothing at this URL.', 404
+app = webapp2.WSGIApplication([('/', MainPage)])
+
+if __name__ == '__main__':
+    app.run()

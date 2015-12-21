@@ -1,59 +1,270 @@
 # coding=utf-8
 from unittest import TestCase
-from main import DozoR
+import webapp2
+from webapp2_extras import json
+from main import app, DozoR, SESSIONS
 
 
-class TestDozoR(TestCase):
-    def test_set_dzzzr(self):
-        d = DozoR(1)
-        result = d.set_dzzzr(
-            "http://classic.dzzzr.ru/spb/go/ spb_Captain 123456 bot"
+class TestApp(TestCase):
+    def test_show_error(self):
+        request = webapp2.Request.blank("/")
+        response = request.get_response(app)
+        self.assertEqual(response.status_int, 200)
+        self.assertIn("application/json", response.headers['Content-Type'])
+        self.assertDictEqual(
+            json.decode(response.body),
+            {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)",
+             "result": "Info"})
+
+    def test_get(self):
+        request = webapp2.Request.blank("/")
+        response = request.get_response(app)
+        self.assertEqual(response.status_int, 200)
+        self.assertIn("application/json", response.headers['Content-Type'])
+        self.assertDictEqual(
+            json.decode(response.body),
+            {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)",
+             "result": "Info"})
+
+    def test_bad_post(self):
+        request = webapp2.Request.blank("/")
+        request.method = "POST"
+        response = request.get_response(app)
+        self.assertEqual(response.status_int, 200)
+        self.assertIn("application/json", response.headers['Content-Type'])
+        self.assertDictEqual(
+            json.decode(response.body),
+            {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)",
+             "result": "Info"})
+
+    def test_json_empty_post(self):
+        request = webapp2.Request.blank("/")
+        request.method = "POST"
+        request.headers["Content-Type"] = "application/json"
+        response = request.get_response(app)
+        self.assertEqual(response.status_int, 200)
+        self.assertIn("application/json", response.headers['Content-Type'])
+        self.assertDictEqual(
+            json.decode(response.body),
+            {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)",
+             "result": "Info"})
+
+    def test_json_start_post(self):
+        request = webapp2.Request.blank("/")
+        request.method = "POST"
+        request.headers["Content-Type"] = "application/json"
+        request.body = json.encode({
+            'update': 1,
+            'message': {
+                u'date': 1450696897,
+                u'text': u'/start',
+                u'from': {
+                    u'username': u'm_messiah',
+                    u'first_name': u'Maxim',
+                    u'last_name': u'Muzafarov',
+                    u'id': 3798371
+                },
+                u'message_id': 1,
+                u'chat': {
+                    u'type': u'group',
+                    u'id': -11812986,
+                    u'title': u'КС'
+                }
+            }
+        })
+        response = request.get_response(app)
+        self.assertEqual(response.status_int, 200)
+        self.assertIn("application/json", response.headers['Content-Type'])
+        self.assertDictEqual(
+            json.decode(response.body),
+            {
+                'method': 'sendMessage',
+                'text': u"Внимательно слушаю!",
+                'chat_id': -11812986,
+                'disable_web_page_preview': True,
+                'reply_to_message_id': 1,
+            }
         )
 
-        self.assertIn("/set_dzzzr", result,
+    def test_json_text_post(self):
+        request = webapp2.Request.blank("/")
+        request.method = "POST"
+        request.headers["Content-Type"] = "application/json"
+        request.body = json.encode({
+            'update': 1,
+            'message': {
+                u'date': 1450696897,
+                u'text': u'как дела?',
+                u'from': {
+                    u'username': u'm_messiah',
+                    u'first_name': u'Maxim',
+                    u'last_name': u'Muzafarov',
+                    u'id': 3798371
+                },
+                u'message_id': 1,
+                u'chat': {
+                    u'type': u'group',
+                    u'id': -11812986,
+                    u'title': u'КС'
+                }
+            }
+        })
+        response = request.get_response(app)
+        self.assertEqual(response.status_int, 200)
+        self.assertIn("application/json", response.headers['Content-Type'])
+        self.assertDictEqual(
+            json.decode(response.body),
+            {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)",
+             "result": "Info"})
+
+    def test_sessions(self):
+        request = webapp2.Request.blank("/")
+        request.method = "POST"
+        request.headers["Content-Type"] = "application/json"
+        request.body = json.encode({
+            'update': 1,
+            'message': {
+                u'date': 1450696897,
+                u'text': u'Привет',
+                u'from': {
+                    u'username': u'm_messiah',
+                    u'first_name': u'Maxim',
+                    u'last_name': u'Muzafarov',
+                    u'id': 3798371
+                },
+                u'message_id': 1,
+                u'chat': {
+                    u'type': u'group',
+                    u'id': -11812986,
+                    u'title': u'КС'
+                }
+            }
+        })
+        _ = request.get_response(app)
+        self.assertIn(-11812986, SESSIONS)
+
+
+class TestBot(TestCase):
+    def send_message(self, text):
+        request = webapp2.Request.blank("/")
+        request.method = "POST"
+        request.headers["Content-Type"] = "application/json"
+        request.body = json.encode({
+            'update': 1,
+            'message': {
+                u'date': 1450696897,
+                u'text': u'%s' % text,
+                u'from': {
+                    u'username': u'm_messiah',
+                    u'first_name': u'Maxim',
+                    u'last_name': u'Muzafarov',
+                    u'id': 3798371
+                },
+                u'message_id': 1,
+                u'chat': {
+                    u'type': u'group',
+                    u'id': -11812986,
+                    u'title': u'КС'
+                }
+            }
+        })
+        response = request.get_response(app)
+        self.assertEqual(response.status_int, 200)
+        self.assertIn("application/json", response.headers['Content-Type'])
+        response = json.decode(response.body)
+        self.assertIn('text', response)
+        return response['text']
+
+    def send_gps(self, gps):
+        request = webapp2.Request.blank("/")
+        request.method = "POST"
+        request.headers["Content-Type"] = "application/json"
+        request.body = json.encode({
+            'update': 1,
+            'message': {
+                u'date': 1450696897,
+                u'text': u'/gps %s' % gps,
+                u'from': {
+                    u'username': u'm_messiah',
+                    u'first_name': u'Maxim',
+                    u'last_name': u'Muzafarov',
+                    u'id': 3798371
+                },
+                u'message_id': 1,
+                u'chat': {
+                    u'type': u'group',
+                    u'id': -11812986,
+                    u'title': u'КС'
+                }
+            }
+        })
+        response = request.get_response(app)
+        self.assertEqual(response.status_int, 200)
+        self.assertIn("application/json", response.headers['Content-Type'])
+        response = json.decode(response.body)
+        self.assertEqual('sendLocation', response['method'])
+        return response['latitude'], response['longitude']
+
+    def test_set_dzzzr(self):
+        response = self.send_message(
+            "/set_dzzzr http://classic.dzzzr.ru/spb/go/ spb_Captain 123456 bot"
+        )
+
+        self.assertIn("/set_dzzzr", response,
                       "Accept not enough arguments")
-        result = d.set_dzzzr(
-            "http://classic.dzzzr.ru/spb/go/ spb_Captain 123456 "
+
+        response = self.send_message(
+            "/set_dzzzr http://classic.dzzzr.ru/spb/go/ spb_Captain 123456 "
             "bot botpassword 1D"
         )
-        self.assertNotIn("/set_dzzzr", result,
+        self.assertNotIn("/set_dzzzr", response,
                          "Arguments with prefix bad splitted")
-        self.assertEqual("1D", d.prefix)
+        self.assertEqual("1D", SESSIONS[-11812986].prefix)
 
     def test_not_found(self):
-        d = DozoR(1)
-        self.assertIsNotNone(d.not_found("1"))
+        self.assertEqual(u"Команда не найдена. Используйте /help",
+                         self.send_message("/abracadabra"))
 
     def test_start(self):
-        d = DozoR(1)
-        self.assertIsNotNone(d.start("1"))
+        self.assertEqual(u"Внимательно слушаю!", self.send_message("/start"))
 
     def test_about(self):
-        d = DozoR(1)
-        self.assertIsNotNone(d.about("1"))
-        self.assertIn("m_messiah", d.about("0"), "Author lost")
+        self.assertEqual(
+            u"Привет!\n"
+            u"Мой автор @m_messiah\n"
+            u"Сайт: https://m-messiah.ru\n"
+            u"\nА еще принимаются пожертвования:\n"
+            u"https://paypal.me/muzafarov\n"
+            u"http://yasobe.ru/na/m_messiah",
+            self.send_message("/about")
+        )
 
     def test_base64(self):
-        d = DozoR(1)
-        self.assertEqual("0J/RgNC40LLQtdGC", d.base64(u"Привет"))
-        self.assertEqual("Привет", d.base64(u"0J/RgNC40LLQtdGC"))
+        self.assertEqual(u"0J/RgNC40LLQtdGC",
+                         self.send_message(u"/base64 Привет"))
+        self.assertEqual(u"Привет",
+                         self.send_message(u"/base64 0J/RgNC40LLQtdGC"))
 
     def test_pos(self):
-        d = DozoR(1)
-        self.assertIn(u"абвя", d.pos(u"1 2 3 33"))
-        self.assertIn(u"abcg", d.pos(u"1 2 3 33"))
+        self.assertIn(u"абвя",
+                         self.send_message(u"/pos 1 2 3 33"))
+        self.assertIn(u"abcg",
+                         self.send_message(u"/pos 1 2 3 33"))
 
     def test_gps(self):
-        d = DozoR(1)
         eta = (56.847222, 60.675)
         dd = u"56.847222, 60.675"
         dmr = u"56 50.8333, 60 40.5"
         dmsr = u"56 50 50, 60 40 30"
-        self.assertEqual(d.gps(dd), eta)
-        self.assertEqual(d.gps(dmr), eta)
-        self.assertEqual(d.gps(dmsr), eta)
+        self.assertEqual(eta, self.send_gps(dd))
+        self.assertEqual(eta, self.send_gps(dmr))
+        self.assertEqual(eta, self.send_gps(dmsr))
+
+    def test_code(self):
+        self.assertIn(u"войти в движок", self.send_message(u"1d23r4"))
 
 
+class TestCodeParsing(TestCase):
     def test_code(self):
         d = DozoR(1)
         d.enabled = True
@@ -72,6 +283,4 @@ class TestDozoR(TestCase):
                          u"123Р6",
                          u"123Р"]:
                 result = d.code(code)
-                self.assertIn(u"войти в движок",
-                              result,
-                              u"Code %s not parsed" % code)
+                self.assertIn(u"войти в движок", result)

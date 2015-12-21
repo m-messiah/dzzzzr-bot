@@ -4,6 +4,7 @@
 # in `lib/` subdirectory.
 #
 # Note: The `lib` directory is added to `sys.path` by `appengine_config.py`.
-Flask
+webapp2
+webob
 requests
 beautifulsoup4
