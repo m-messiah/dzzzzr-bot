@@ -179,9 +179,9 @@ class DozoR(object):
             if self.name in command:
                 command = command[:command.find("@DzzzzR_bot")]
             logging.debug("REQUEST\t%s\t%s\t'%s'",
-                             self.chat_id,
-                             command.encode("utf8"),
-                             arguments.encode("utf8"))
+                          self.chat_id,
+                          command.encode("utf8"),
+                          arguments.encode("utf8"))
             if command == "/set_dzzzr":
                 # if str(sender['id']) == "3798371":
                 try:
