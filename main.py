@@ -1,5 +1,4 @@
 # coding=utf-8
-import logging
 from base64 import b64decode, b64encode
 from re import compile as re_compile
 from zlib import decompress, MAX_WBITS
@@ -188,7 +187,11 @@ class DozoR(object):
                 except Exception as e:
                     return "Incorrect format (%s)" % e
             else:
-                return getattr(self, command[1:], self.not_found)(arguments)
+                try:
+                    return getattr(self, command[1:],
+                                   self.not_found)(arguments)
+                except UnicodeEncodeError:
+                    return self.not_found(None)
         else:
             response = self.code(text)
             if response:
