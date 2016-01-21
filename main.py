@@ -178,10 +178,6 @@ class DozoR(object):
             command, _, arguments = text.partition(" ")
             if self.name in command:
                 command = command[:command.find("@DzzzzR_bot")]
-            logging.debug("REQUEST\t%s\t%s\t'%s'",
-                          self.chat_id,
-                          command.encode("utf8"),
-                          arguments.encode("utf8"))
             if command == "/set_dzzzr":
                 # if str(sender['id']) == "3798371":
                 try:
@@ -264,7 +260,6 @@ class MainPage(webapp2.RequestHandler):
         sender = message['chat']['id']
         text = message.get('text')
         if text:
-            logging.debug(message)
             response = None
             if sender not in SESSIONS:
                 SESSIONS[sender] = DozoR(sender)
