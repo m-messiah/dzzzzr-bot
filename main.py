@@ -78,6 +78,9 @@ class DozoR(object):
     def not_found(self, _):
         return u"Команда не найдена. Используйте /help"
 
+    def version(self, _):
+        return u"Версия: 2.1"
+
     def help(self, _):
         return (
             u"Я могу принимать следующие команды:\n"
