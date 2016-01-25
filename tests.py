@@ -6,7 +6,6 @@ from main import app, DozoR, SESSIONS
 from test_engine import app as dr_engine
 from paste import httpserver
 from multiprocessing import Process
-import requests
 
 
 class TestApp(TestCase):
