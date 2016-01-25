@@ -279,8 +279,8 @@ class TestBot(TestCase):
 
     def test_remain_codes(self):
         response = self.send_message(u"/codes")
-        print(response)
         self.assertNotIn(u"/help", response)
+        self.assertIn(u"основные коды", response)
 
     def test_time(self):
         response = self.send_message(u"/time")
