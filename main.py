@@ -286,6 +286,8 @@ class DozoR(object):
 
             codes = text.split()
             result = []
+            if len(codes) < 1:
+                return None
             if dr_code.match(codes[0]):
                 for code in codes:
                     if dr_code.match(code):
