@@ -66,6 +66,21 @@ class DozoR(object):
             if login_page.status_code != 200:
                 return u"Авторизация не удалась"
             else:
+                try:
+                    content = decompress(login_page.content, 16 + MAX_WBITS)
+                except:
+                    content = login_page.content
+                answer = BeautifulSoup(
+                        content.decode("cp1251", "ignore"),
+                        'html.parser'
+                )
+                message = answer.find(class_="sysmsg")
+                if message and message.get_text():
+                    message = message.get_text()
+                else:
+                    message = u"Авторизация не удалась"
+                if u"Авторизация пройдена успешно" not in message:
+                    return message
                 self.enabled = True
                 self.credentials = "|".join((self.url, captain, login))
                 CREDENTIALS[self.credentials] = self.chat_id
@@ -173,7 +188,49 @@ class DozoR(object):
                     round(d + (m * 60 + s) / 3600 * (-1 if d < 0 else 1), 6)
                 )
             return tuple(result)
-        return u"Неправильные координаты"
+        return None
+
+    def time(self, _):
+        if self.url == "":
+            return u"Сначала надо войти в движок"
+        answer = self.browser.get(self.url)
+        if not answer:
+            return u"Нет ответа. Проверьте вручную."
+        try:
+            content = decompress(answer.content, 16 + MAX_WBITS)
+        except:
+            content = answer.content
+        answer = BeautifulSoup(
+            content.decode("cp1251", "ignore"),
+            'html.parser'
+        )
+        message = answer.find(
+            "p", text=re_compile(ur"Время на уровне: (\d\d:\d\d:\d\d)")
+        )
+        if message and message.get_text():
+            return u" ".join(message.get_text().split()[:4])
+        return u"Нет ответа"
+
+    def codes(self, _):
+        if self.url == "":
+            return u"Сначала надо войти в движок"
+        answer = self.browser.get(self.url)
+        if not answer:
+            return u"Нет ответа. Проверьте вручную."
+        try:
+            content = decompress(answer.content, 16 + MAX_WBITS)
+        except:
+            content = answer.content
+        answer = BeautifulSoup(
+            content.decode("cp1251", "ignore"),
+            'html.parser'
+        )
+        message = answer.find(
+            "strong", text=re_compile(u"Коды сложности")
+        ).nextSibling
+        if message and message.get_text():
+            return message.get_text().strip()
+        return u"Нет ответа"
 
     def handle(self, text):
         if text[0] == '/':
@@ -219,6 +276,14 @@ class DozoR(object):
                                    else u"нет ответа.")
 
         if self.enabled:
+            if text.count(",") == 1:
+                try:
+                    result = self.gps(text)
+                    if result:
+                        return result
+                except:
+                    pass
+
             codes = text.split()
             result = []
             if dr_code.match(codes[0]):
@@ -234,7 +299,6 @@ class DozoR(object):
             else:
                 if u" бот" in text[-5:]:
                     return u"хуебот"
-
                 if u"Привет" in text or u"привет" in text:
                     return u"Привет!"
                 return None
@@ -284,11 +348,8 @@ class MainPage(webapp2.RequestHandler):
                             'reply_to_message_id': message['message_id'],
                             'disable_web_page_preview': True}
 
-            if response:
-                self.response.headers['Content-Type'] = 'application/json'
-                self.response.write(json.encode(response))
-            else:
-                self.show_error()
+            self.response.headers['Content-Type'] = 'application/json'
+            self.response.write(json.encode(response if response else {}))
 
 
 app = webapp2.WSGIApplication([('/', MainPage)])

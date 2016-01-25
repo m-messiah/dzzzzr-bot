@@ -3,6 +3,10 @@ from unittest import TestCase
 import webapp2
 from webapp2_extras import json
 from main import app, DozoR, SESSIONS
+from test_engine import app as dr_engine
+from paste import httpserver
+from multiprocessing import Process
+import requests
 
 
 class TestApp(TestCase):
@@ -12,9 +16,9 @@ class TestApp(TestCase):
         self.assertEqual(response.status_int, 200)
         self.assertIn("application/json", response.headers['Content-Type'])
         self.assertDictEqual(
-            json.decode(response.body),
-            {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)",
-             "result": "Info"})
+                json.decode(response.body),
+                {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)",
+                 "result": "Info"})
 
     def test_get(self):
         request = webapp2.Request.blank("/")
@@ -22,9 +26,9 @@ class TestApp(TestCase):
         self.assertEqual(response.status_int, 200)
         self.assertIn("application/json", response.headers['Content-Type'])
         self.assertDictEqual(
-            json.decode(response.body),
-            {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)",
-             "result": "Info"})
+                json.decode(response.body),
+                {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)",
+                 "result": "Info"})
 
     def test_bad_post(self):
         request = webapp2.Request.blank("/")
@@ -33,9 +37,9 @@ class TestApp(TestCase):
         self.assertEqual(response.status_int, 200)
         self.assertIn("application/json", response.headers['Content-Type'])
         self.assertDictEqual(
-            json.decode(response.body),
-            {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)",
-             "result": "Info"})
+                json.decode(response.body),
+                {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)",
+                 "result": "Info"})
 
     def test_json_empty_post(self):
         request = webapp2.Request.blank("/")
@@ -45,9 +49,9 @@ class TestApp(TestCase):
         self.assertEqual(response.status_int, 200)
         self.assertIn("application/json", response.headers['Content-Type'])
         self.assertDictEqual(
-            json.decode(response.body),
-            {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)",
-             "result": "Info"})
+                json.decode(response.body),
+                {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)",
+                 "result": "Info"})
 
     def test_json_start_post(self):
         request = webapp2.Request.blank("/")
@@ -76,14 +80,14 @@ class TestApp(TestCase):
         self.assertEqual(response.status_int, 200)
         self.assertIn("application/json", response.headers['Content-Type'])
         self.assertDictEqual(
-            json.decode(response.body),
-            {
-                'method': 'sendMessage',
-                'text': u"Внимательно слушаю!",
-                'chat_id': -11812986,
-                'disable_web_page_preview': True,
-                'reply_to_message_id': 1,
-            }
+                json.decode(response.body),
+                {
+                    'method': 'sendMessage',
+                    'text': u"Внимательно слушаю!",
+                    'chat_id': -11812986,
+                    'disable_web_page_preview': True,
+                    'reply_to_message_id': 1,
+                }
         )
 
     def test_json_text_post(self):
@@ -112,10 +116,7 @@ class TestApp(TestCase):
         response = request.get_response(app)
         self.assertEqual(response.status_int, 200)
         self.assertIn("application/json", response.headers['Content-Type'])
-        self.assertDictEqual(
-            json.decode(response.body),
-            {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)",
-             "result": "Info"})
+        self.assertDictEqual(json.decode(response.body), {})
 
     def test_sessions(self):
         request = webapp2.Request.blank("/")
@@ -145,6 +146,14 @@ class TestApp(TestCase):
 
 
 class TestBot(TestCase):
+    def setUp(self):
+        self.engine = Process(target=httpserver.serve, args=(dr_engine, ),
+                              kwargs={'host': "127.0.0.1", 'port': "5000"})
+        self.engine.start()
+
+    def tearDown(self):
+        self.engine.terminate()
+
     def send_message(self, text):
         request = webapp2.Request.blank("/")
         request.method = "POST"
@@ -183,7 +192,7 @@ class TestBot(TestCase):
             'update': 1,
             'message': {
                 u'date': 1450696897,
-                u'text': u'/gps %s' % gps,
+                u'text': u'%s' % gps,
                 u'from': {
                     u'username': u'm_messiah',
                     u'first_name': u'Maxim',
@@ -207,18 +216,19 @@ class TestBot(TestCase):
 
     def test_set_dzzzr(self):
         response = self.send_message(
-            "/set_dzzzr http://classic.dzzzr.ru/spb/go/ spb_Captain 123456 bot"
+            "/set_dzzzr http://localhost:5000/ spb_Captain 123456 bot"
         )
 
         self.assertIn("/set_dzzzr", response,
                       "Accept not enough arguments")
 
         response = self.send_message(
-            "/set_dzzzr http://classic.dzzzr.ru/spb/go/ spb_Captain 123456 "
+            "/set_dzzzr http://localhost:5000/ spb_Captain 123456 "
             "bot botpassword 1D"
         )
         self.assertNotIn("/set_dzzzr", response,
                          "Arguments with prefix bad splitted")
+        self.assertNotEqual("", SESSIONS[-11812986].credentials)
         self.assertEqual("1D", SESSIONS[-11812986].prefix)
 
     def test_not_found(self):
@@ -230,13 +240,13 @@ class TestBot(TestCase):
 
     def test_about(self):
         self.assertEqual(
-            u"Привет!\n"
-            u"Мой автор @m_messiah\n"
-            u"Сайт: https://m-messiah.ru\n"
-            u"\nА еще принимаются пожертвования:\n"
-            u"https://paypal.me/muzafarov\n"
-            u"http://yasobe.ru/na/m_messiah",
-            self.send_message("/about")
+                u"Привет!\n"
+                u"Мой автор @m_messiah\n"
+                u"Сайт: https://m-messiah.ru\n"
+                u"\nА еще принимаются пожертвования:\n"
+                u"https://paypal.me/muzafarov\n"
+                u"http://yasobe.ru/na/m_messiah",
+                self.send_message("/about")
         )
 
     def test_base64(self):
@@ -247,9 +257,9 @@ class TestBot(TestCase):
 
     def test_pos(self):
         self.assertIn(u"абвя",
-                         self.send_message(u"/pos 1 2 3 33"))
+                      self.send_message(u"/pos 1 2 3 33"))
         self.assertIn(u"abcg",
-                         self.send_message(u"/pos 1 2 3 33"))
+                      self.send_message(u"/pos 1 2 3 33"))
 
     def test_gps(self):
         eta = (56.847222, 60.675)
@@ -262,6 +272,21 @@ class TestBot(TestCase):
 
     def test_code(self):
         self.assertIn(u"войти в движок", self.send_message(u"1d23r4"))
+        self.send_message(
+            "/set_dzzzr http://127.0.0.1:5000/ spb_Captain 123456 bot password"
+        )
+        self.assertIn(u"Код принят", self.send_message(u"1d23r4"))
+        self.assertIn(u"Код не принят", self.send_message(u"2d23r4"))
+
+    def test_remain_codes(self):
+        response = self.send_message(u"/codes")
+        print(response)
+        self.assertNotIn(u"/help", response)
+
+    def test_time(self):
+        response = self.send_message(u"/time")
+        self.assertNotIn(u"/help", response)
+        self.assertIn("00:15:02", response)
 
 
 class TestCodeParsing(TestCase):
