@@ -132,9 +132,12 @@ class DozoR(object):
         return u"Я вернулся! Давайте ваши коды!"
 
     def stop(self, _):
-        self.enabled = False
-        del CREDENTIALS[self.credentials]
-        del SESSIONS[self.chat_id]
+        try:
+            self.enabled = False
+            del CREDENTIALS[self.credentials]
+            del SESSIONS[self.chat_id]
+        except:
+            pass
         return u"До новых встреч!"
 
     def about(self, _):
@@ -164,31 +167,34 @@ class DozoR(object):
         ))
 
     def gps(self, text):
-        raw_coords = text.split(",")
-        coords = [0, [[], []]]
-        for i, lat in enumerate(raw_coords):
-            lat = lat.split()
-            count = len(lat)
-            if count > coords[0]:
-                coords[0] = count
-            coords[1][i] = lat
-        if coords[0] == 1:
-            return tuple(map(lambda x: round(float(x[0]), 6), coords[1]))
-        if coords[0] == 2:
-            result = []
-            for lat in coords[1]:
-                d, m = map(float, lat[:2])
-                result.append(round(d + m / 60 * (-1 if d < 0 else 1), 6))
-            return tuple(result)
-        if coords[0] == 3:
-            result = []
-            for lat in coords[1]:
-                d, m, s = map(float, lat[:3])
-                result.append(
-                    round(d + (m * 60 + s) / 3600 * (-1 if d < 0 else 1), 6)
-                )
-            return tuple(result)
-        return None
+        try:
+            raw_coords = text.split(",")
+            coords = [0, [[], []]]
+            for i, lat in enumerate(raw_coords):
+                lat = lat.split()
+                count = len(lat)
+                if count > coords[0]:
+                    coords[0] = count
+                coords[1][i] = lat
+            if coords[0] == 1:
+                return tuple(map(lambda x: round(float(x[0]), 6), coords[1]))
+            if coords[0] == 2:
+                result = []
+                for lat in coords[1]:
+                    d, m = map(float, lat[:2])
+                    result.append(round(d + m / 60 * (-1 if d < 0 else 1), 6))
+                return tuple(result)
+            if coords[0] == 3:
+                result = []
+                for lat in coords[1]:
+                    d, m, s = map(float, lat[:3])
+                    result.append(
+                        round(d + (m * 60 + s) / 3600 * (-1 if d < 0 else 1), 6)
+                    )
+                return tuple(result)
+            return None
+        except:
+            pass
 
     def time(self, _):
         if self.url == "":
@@ -250,9 +256,12 @@ class DozoR(object):
                 except UnicodeEncodeError:
                     return self.not_found(None)
         else:
-            response = self.code(text)
-            if response:
-                return response
+            try:
+                response = self.code(text)
+                if response:
+                    return response
+            except:
+                pass
 
     def code(self, text):
         def send(browser, url, code):
