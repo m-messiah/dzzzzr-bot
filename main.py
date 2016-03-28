@@ -1,12 +1,16 @@
 # coding=utf-8
 from base64 import b64decode, b64encode
 from re import compile as re_compile
+from urllib import urlencode
 from zlib import decompress, MAX_WBITS
+import logging
 
 import webapp2
 from bs4 import BeautifulSoup
 from requests import Session
+from google.appengine.api import urlfetch
 from webapp2_extras import json
+import time
 
 __author__ = 'm_messiah'
 __url__ = "https://dzzzr-bot.appspot.com"
@@ -48,7 +52,8 @@ class DozoR(object):
             return (u"Использование:\n"
                     u"/set_dzzzr url captain pin login password [prefix]")
         else:
-            if "|".join((self.url, captain, login)) in CREDENTIALS:
+            if ("|".join((self.url, captain, login)) in CREDENTIALS and
+                self.chat_id != CREDENTIALS["|".join((self.url, captain, login))]):
                 return (u"Бот уже используется этой командой. chat_id = %s\n"
                         u"Сначала остановите его. (/stop)\n"
                         % CREDENTIALS["|".join((self.url, captain, login))])
@@ -87,13 +92,33 @@ class DozoR(object):
                 return u"Добро пожаловать, %s" % login
 
     def show_sessions(self, _):
-        return u"Сейчас используют:\n" + "\n".join(CREDENTIALS.keys())
+        return u"Сейчас используют:\n" + u"\n".join(CREDENTIALS.keys())
+
+    def show_sess(self, _):
+        return u"Сейчас используют:\n" + u"\n".join(map(str, SESSIONS.keys()))
+
+    def broadcast_message(self, text):
+        fl = True
+
+        for chat_id in SESSIONS:
+            if chat_id == self.chat_id:
+                continue
+            payload = urlencode({'chat_id': chat_id,
+                                 'text': text.encode("utf8")})
+            o = urlfetch.fetch(
+                "https://api.telegram.org/"
+                "bot117677541:AAEKw2NOQabXRGwr-Edvqx1RJ6Z73Xjxn8k/sendMessage",
+                payload=payload,
+                method=urlfetch.POST).content
+
+        return (u"Сообщение разослано %s получателям" % (len(SESSIONS) - 1)
+                if fl else u"Сообщение доставлено не всем")
 
     def not_found(self, _):
         return u"Команда не найдена. Используйте /help"
 
     def version(self, _):
-        return u"Версия: 2.1"
+        return u"Версия: 2.2"
 
     def help(self, _):
         return (
@@ -159,7 +184,13 @@ class DozoR(object):
             return response
 
     def pos(self, text):
-        positions = list(map(int, text.split()))
+        try:
+            positions = list(map(int, text.split()))
+        except ValueError:
+            try:
+                positions = list(map(int, text.split(",")))
+            except:
+                return None
 
         return u"\n".join((
             u"".join(map(lambda i: unichr(RUS[(i - 1) % 33]), positions)),
@@ -253,8 +284,12 @@ class DozoR(object):
                 try:
                     return getattr(self, command[1:],
                                    self.not_found)(arguments)
-                except UnicodeEncodeError:
+                except UnicodeEncodeError as e:
+                    logging.warning(e)
                     return self.not_found(None)
+                except Exception as e:
+                    logging.warning(e)
+                    return None
         else:
             try:
                 response = self.code(text)
@@ -341,6 +376,7 @@ class MainPage(webapp2.RequestHandler):
         sender = message['chat']['id']
         text = message.get('text')
         if text:
+            logging.debug(text)
             response = None
             if sender not in SESSIONS:
                 SESSIONS[sender] = DozoR(sender)

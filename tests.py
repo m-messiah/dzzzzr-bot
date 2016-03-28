@@ -170,9 +170,11 @@ class TestBot(TestCase):
                 },
                 u'message_id': 1,
                 u'chat': {
-                    u'type': u'group',
-                    u'id': -11812986,
-                    u'title': u'КС'
+                    u'type': u'user',
+                    u'id': 3798371,
+                    u'username': u'm_messiah',
+                    u'first_name': u'Maxim',
+                    u'last_name': u'Muzafarov',
                 }
             }
         })
@@ -200,9 +202,11 @@ class TestBot(TestCase):
                 },
                 u'message_id': 1,
                 u'chat': {
-                    u'type': u'group',
-                    u'id': -11812986,
-                    u'title': u'КС'
+                    u'type': u'user',
+                    u'id': 3798371,
+                    u'username': u'm_messiah',
+                    u'first_name': u'Maxim',
+                    u'last_name': u'Muzafarov',
                 }
             }
         })
@@ -227,8 +231,8 @@ class TestBot(TestCase):
         )
         self.assertNotIn("/set_dzzzr", response,
                          "Arguments with prefix bad splitted")
-        self.assertNotEqual("", SESSIONS[-11812986].credentials)
-        self.assertEqual("1D", SESSIONS[-11812986].prefix)
+        self.assertNotEqual("", SESSIONS[3798371].credentials)
+        self.assertEqual("1D", SESSIONS[3798371].prefix)
 
     def test_not_found(self):
         self.assertEqual(u"Команда не найдена. Используйте /help",
@@ -236,6 +240,9 @@ class TestBot(TestCase):
 
     def test_start(self):
         self.assertEqual(u"Внимательно слушаю!", self.send_message("/start"))
+
+    def test_show_sess(self):
+        self.assertIn(u"Сейчас используют", self.send_message("/show_sess"))
 
     def test_about(self):
         self.assertEqual(
