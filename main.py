@@ -10,7 +10,6 @@ from bs4 import BeautifulSoup
 from requests import Session
 from google.appengine.api import urlfetch
 from webapp2_extras import json
-import time
 
 __author__ = 'm_messiah'
 __url__ = "https://dzzzr-bot.appspot.com"
@@ -26,6 +25,26 @@ RUS = (1072, 1073, 1074, 1075, 1076, 1077, 1105, 1078, 1079, 1080, 1081, 1082,
 
 ENG = (97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111,
        112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122)
+
+
+def botan_track(chat_id, event, message):
+    try:
+        botan_url = "https://api.botan.io/track?"
+        botan_url += "token=ydRXN:ZK8C:Iq7BXBi9MUb6Sp0ahCJ6M&"
+        botan_url += "uid=%s&" % chat_id
+        botan_url += "name=%s" % event
+        botan = urlfetch.fetch(botan_url,
+                               payload=json.encode(message),
+                               method=urlfetch.POST,
+                               headers={"Content-Type": "application/json"})
+        if botan.status_code == 200:
+            response = json.decode(botan.content)
+            if response['status'] == 'accepted':
+                return True
+
+        return False
+    except:
+        return False
 
 
 class DozoR(object):
@@ -55,7 +74,7 @@ class DozoR(object):
         else:
             merged = "|".join((self.url, captain, login))
             if (merged in CREDENTIALS and
-                self.chat_id != CREDENTIALS[merged]):
+                        self.chat_id != CREDENTIALS[merged]):
                 return (u"Бот уже используется этой командой. В чате %s\n"
                         u"Сначала остановите его. (/stop)\n"
                         % SESSIONS[CREDENTIALS[merged]].title)
@@ -78,8 +97,8 @@ class DozoR(object):
                 except:
                     content = login_page.content
                 answer = BeautifulSoup(
-                        content.decode("cp1251", "ignore"),
-                        'html.parser'
+                    content.decode("cp1251", "ignore"),
+                    'html.parser'
                 )
                 message = answer.find(class_="sysmsg")
                 if message and message.get_text():
@@ -97,7 +116,7 @@ class DozoR(object):
         return u"Сейчас используют:\n" + u"\n".join(CREDENTIALS.keys())
 
     def show_sess(self, _):
-        sessions = ["%s (%s)" % (v.title, k) for k,v in SESSIONS.items()]
+        sessions = ["%s (%s)" % (v.title, k) for k, v in SESSIONS.items()]
         return u"Сейчас используют:\n" + u"\n".join(sessions)
 
     def broadcast_message(self, text):
@@ -121,7 +140,7 @@ class DozoR(object):
         return u"Команда не найдена. Используйте /help"
 
     def version(self, _):
-        return u"Версия: 2.3"
+        return u"Версия: 2.4"
 
     def help(self, _):
         return (
@@ -272,11 +291,12 @@ class DozoR(object):
             return message.get_text().strip()
         return u"Нет ответа"
 
-    def handle(self, text):
-        if text[0] == '/':
-            command, _, arguments = text.partition(" ")
+    def handle(self, message):
+        if message['text'][0] == '/':
+            command, _, arguments = message['text'].partition(" ")
             if self.name in command:
                 command = command[:command.find("@DzzzzR_bot")]
+            botan_track(self.chat_id, command, message)
             if command == "/set_dzzzr":
                 try:
                     return self.set_dzzzr(arguments)
@@ -294,13 +314,13 @@ class DozoR(object):
                     return None
         else:
             try:
-                response = self.code(text)
+                response = self.code(message)
                 if response:
                     return response
             except:
                 pass
 
-    def code(self, text):
+    def code(self, message):
         def send(browser, url, code):
             if url == "":
                 return code + u" - сначала надо войти в движок"
@@ -322,15 +342,16 @@ class DozoR(object):
                                    else u"нет ответа.")
 
         if self.enabled:
-            if text.count(",") == 1:
+            if message['text'].count(",") == 1:
                 try:
-                    result = self.gps(text)
+                    result = self.gps(message['text'])
                     if result:
+                        botan_track(self.chat_id, "gps", message)
                         return result
                 except:
                     pass
 
-            codes = text.split()
+            codes = message['text'].split()
             result = []
             if len(codes) < 1:
                 return None
@@ -343,12 +364,16 @@ class DozoR(object):
                             code = self.prefix + code
                     result.append(send(self.browser, self.url, code))
             if len(result):
+                botan_track(self.chat_id, "code", message)
                 return u"\n".join(result)
             else:
-                if u" бот" in text[-5:]:
+                if u" бот" in message['text'][-5:]:
+                    botan_track(self.chat_id, "bot", message)
                     return u"хуебот"
-                if u"Привет" in text or u"привет" in text:
+                if u"Привет" in message['text'] or u"привет" in message['text']:
+                    botan_track(self.chat_id, "hello", message)
                     return u"Привет!"
+                botan_track(self.chat_id, 'message', message)
                 return None
         else:
             pass
@@ -376,14 +401,13 @@ class MainPage(webapp2.RequestHandler):
             return self.show_error()
         message = update['message']
         sender = message['chat']
-        text = message.get('text')
-        if text:
-            logging.debug(text)
+        if "text" in message:
+            logging.debug(message['text'])
             response = None
             if sender['id'] not in SESSIONS:
                 SESSIONS[sender['id']] = DozoR(sender)
 
-            output = SESSIONS[sender['id']].handle(text)
+            output = SESSIONS[sender['id']].handle(message)
             if isinstance(output, tuple):
                 response = {'method': "sendLocation",
                             'chat_id': sender['id'],
