@@ -29,8 +29,9 @@ ENG = (97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111,
 
 
 class DozoR(object):
-    def __init__(self, chat_id):
-        self.chat_id = chat_id
+    def __init__(self, sender):
+        self.chat_id = sender['id']
+        self.title = sender.get('title', sender.get('username', ''))
         self.url = ""
         self.prefix = ""
         self.credentials = ""
@@ -52,11 +53,12 @@ class DozoR(object):
             return (u"Использование:\n"
                     u"/set_dzzzr url captain pin login password [prefix]")
         else:
-            if ("|".join((self.url, captain, login)) in CREDENTIALS and
-                self.chat_id != CREDENTIALS["|".join((self.url, captain, login))]):
-                return (u"Бот уже используется этой командой. chat_id = %s\n"
+            merged = "|".join((self.url, captain, login))
+            if (merged in CREDENTIALS and
+                self.chat_id != CREDENTIALS[merged]):
+                return (u"Бот уже используется этой командой. В чате %s\n"
                         u"Сначала остановите его. (/stop)\n"
-                        % CREDENTIALS["|".join((self.url, captain, login))])
+                        % SESSIONS[CREDENTIALS[merged]].title)
             self.browser.headers.update({'referer': self.url})
             self.browser.auth = (captain, pin)
             login_page = self.browser.post(
@@ -95,7 +97,8 @@ class DozoR(object):
         return u"Сейчас используют:\n" + u"\n".join(CREDENTIALS.keys())
 
     def show_sess(self, _):
-        return u"Сейчас используют:\n" + u"\n".join(map(str, SESSIONS.keys()))
+        sessions = ["%s (%s)" % (v.title, k) for k,v in SESSIONS.items()]
+        return u"Сейчас используют:\n" + u"\n".join(sessions)
 
     def broadcast_message(self, text):
         fl = True
@@ -118,7 +121,7 @@ class DozoR(object):
         return u"Команда не найдена. Используйте /help"
 
     def version(self, _):
-        return u"Версия: 2.2"
+        return u"Версия: 2.3"
 
     def help(self, _):
         return (
@@ -275,7 +278,6 @@ class DozoR(object):
             if self.name in command:
                 command = command[:command.find("@DzzzzR_bot")]
             if command == "/set_dzzzr":
-                # if str(sender['id']) == "3798371":
                 try:
                     return self.set_dzzzr(arguments)
                 except Exception as e:
@@ -373,24 +375,24 @@ class MainPage(webapp2.RequestHandler):
         except Exception:
             return self.show_error()
         message = update['message']
-        sender = message['chat']['id']
+        sender = message['chat']
         text = message.get('text')
         if text:
             logging.debug(text)
             response = None
-            if sender not in SESSIONS:
-                SESSIONS[sender] = DozoR(sender)
+            if sender['id'] not in SESSIONS:
+                SESSIONS[sender['id']] = DozoR(sender)
 
-            output = SESSIONS[sender].handle(text)
+            output = SESSIONS[sender['id']].handle(text)
             if isinstance(output, tuple):
                 response = {'method': "sendLocation",
-                            'chat_id': sender,
+                            'chat_id': sender['id'],
                             'reply_to_message_id': message['message_id'],
                             'latitude': output[0],
                             'longitude': output[1]}
             elif output:
                 response = {'method': "sendMessage",
-                            'chat_id': sender,
+                            'chat_id': sender['id'],
                             'text': output,
                             'reply_to_message_id': message['message_id'],
                             'disable_web_page_preview': True}
