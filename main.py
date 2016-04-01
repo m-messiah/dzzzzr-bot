@@ -382,9 +382,6 @@ class DozoR(object):
                 botan_track(self.chat_id, "code", message)
                 return u"\n".join(result)
             else:
-                if u" бот" in message['text'][-5:]:
-                    botan_track(self.chat_id, "bot", message)
-                    return u"хуебот"
                 if u"привет" in message['text'].lower():
                     if u"бот" in message['text'].lower():
                         botan_track(self.chat_id, "hello", message)
