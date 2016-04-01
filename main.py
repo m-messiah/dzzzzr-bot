@@ -1,5 +1,6 @@
 # coding=utf-8
 from base64 import b64decode, b64encode
+from random import choice
 from re import compile as re_compile
 from urllib import urlencode
 from zlib import decompress, MAX_WBITS
@@ -119,6 +120,20 @@ class DozoR(object):
         sessions = ["%s (%s)" % (v.title, k) for k, v in SESSIONS.items()]
         return u"Сейчас используют:\n" + u"\n".join(sessions)
 
+    def send_message(self, arguments):
+        try:
+            chat_id, _, text = arguments.partition(" ")
+            payload = urlencode({'chat_id': chat_id,
+                                 'text': text.encode("utf8")})
+            o = urlfetch.fetch(
+                "https://api.telegram.org/"
+                "bot117677541:AAEKw2NOQabXRGwr-Edvqx1RJ6Z73Xjxn8k/sendMessage",
+                payload=payload,
+                method=urlfetch.POST).content
+            return u"Сообщение отправлено"
+        except:
+            return u"Не удалось отправить сообщение"
+
     def broadcast_message(self, text):
         fl = True
 
@@ -140,7 +155,7 @@ class DozoR(object):
         return u"Команда не найдена. Используйте /help"
 
     def version(self, _):
-        return u"Версия: 2.4"
+        return u"Версия: 2.7"
 
     def help(self, _):
         return (
@@ -379,6 +394,18 @@ class DozoR(object):
             pass
 
 
+def hello_message(user):
+    response = u"Привет, %s! " % user.get('first_name')
+    response += choice([
+        u"У нас тут не курят.",
+        u"Во время игры мы тут не флудим.",
+        u"Я буду отправлять найденные коды сразу в движок.",
+        u"Буду краток - тебя ждали.",
+        u"А мы тебя уже давно ждём.",
+    ])
+    return response
+
+
 class MainPage(webapp2.RequestHandler):
     def show_error(self):
         self.response.headers['Content-Type'] = 'application/json'
@@ -399,11 +426,11 @@ class MainPage(webapp2.RequestHandler):
             update = json.decode(self.request.body)
         except Exception:
             return self.show_error()
+        response = None
         message = update['message']
         sender = message['chat']
         if "text" in message:
             logging.debug(message['text'])
-            response = None
             if sender['id'] not in SESSIONS:
                 SESSIONS[sender['id']] = DozoR(sender)
 
@@ -421,8 +448,26 @@ class MainPage(webapp2.RequestHandler):
                             'reply_to_message_id': message['message_id'],
                             'disable_web_page_preview': True}
 
-            self.response.headers['Content-Type'] = 'application/json'
-            self.response.write(json.encode(response if response else {}))
+        elif "contact" in message:
+            response = {'method': "sendMessage",
+                        'chat_id': sender['id'],
+                        'text': "id = %s"
+                                % message['contact'].get('user_id', "none"),
+                        'reply_to_message_id': message['message_id'],
+                        'disable_web_page_preview': True}
+        elif "new_chat_participant" in message:
+            response = {'method': "sendMessage",
+                        'chat_id': sender['id'],
+                        'text': hello_message(message['new_chat_participant']),
+                        'disable_web_page_preview': True}
+        elif "left_chat_participant" in message:
+            response = {'method': "sendMessage",
+                        'chat_id': sender['id'],
+                        'text': u"И без него проживём.",
+                        'disable_web_page_preview': True}
+
+        self.response.headers['Content-Type'] = 'application/json'
+        self.response.write(json.encode(response if response else {}))
 
 
 app = webapp2.WSGIApplication([('/', MainPage)])
