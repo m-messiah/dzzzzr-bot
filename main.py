@@ -55,7 +55,7 @@ class DozoR(object):
         self.url = ""
         self.prefix = ""
         self.credentials = ""
-        self.enabled = True
+        self.enabled = False
         self.browser = Session()
         self.name = "@DzzzzR_bot"
 
@@ -155,7 +155,7 @@ class DozoR(object):
         return u"Команда не найдена. Используйте /help"
 
     def version(self, _):
-        return u"Версия: 2.7"
+        return u"Версия: 2.8"
 
     def help(self, _):
         return (
@@ -285,6 +285,27 @@ class DozoR(object):
             return u" ".join(message.get_text().split()[:4])
         return u"Нет ответа"
 
+    def remain(self, _):
+        if self.url == "":
+            return u"Сначала надо войти в движок"
+        answer = self.browser.get(self.url)
+        if not answer:
+            return u"Нет ответа. Проверьте вручную."
+        try:
+            content = decompress(answer.content, 16 + MAX_WBITS)
+        except:
+            content = answer.content
+        answer = BeautifulSoup(
+            content.decode("cp1251", "ignore"),
+            'html.parser'
+        )
+        message = answer.find(
+            "div", text=re_compile(u"найдено кодов")
+        )
+        if message and message.get_text():
+            return message.get_text(strip=True)
+        return u"Нет ответа"
+
     def codes(self, _):
         if self.url == "":
             return u"Сначала надо войти в движок"
@@ -302,8 +323,22 @@ class DozoR(object):
         message = answer.find(
             "strong", text=re_compile(u"Коды сложности")
         ).nextSibling
-        if message and message.get_text():
-            return message.get_text().strip()
+        if message and message.contents:
+            sectors = message.encode_contents().split("<br/>")
+            result = []
+            for sector in filter(len, sectors):
+                sector_name, _, codes = sector.partition(":")
+                _, __, codes = codes.partition(":")
+                codes = filter(lambda c: "span" not in c[1],
+                               enumerate(codes.strip().split(", "), start=1))
+                result.append(
+                    u"%s (осталось %s): %s" % (
+                        sector_name.decode("utf8"),
+                        len(codes),
+                        u", ".join(map(lambda t: u"%s (%s)" % (t[0], t[1]),
+                                       codes))
+                    ))
+            return result
         return u"Нет ответа"
 
     def handle(self, message):
@@ -381,15 +416,13 @@ class DozoR(object):
             if len(result):
                 botan_track(self.chat_id, "code", message)
                 return u"\n".join(result)
-            else:
-                if u"привет" in message['text'].lower():
-                    if u"бот" in message['text'].lower():
-                        botan_track(self.chat_id, "hello", message)
-                        return u"Привет!"
-                botan_track(self.chat_id, 'message', message)
-                return None
-        else:
-            pass
+
+        if u"привет" in message['text'].lower():
+            if u"бот" in message['text'].lower():
+                botan_track(self.chat_id, "hello", message)
+                return u"Привет!"
+        botan_track(self.chat_id, 'message', message)
+        return None
 
 
 def hello_message(user):

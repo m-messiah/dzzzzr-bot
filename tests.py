@@ -1,11 +1,16 @@
 # coding=utf-8
 from unittest import TestCase
+import sys
+import os.path
+sys.path.insert(1, '/usr/local/google_appengine')
+sys.path.insert(1, '/usr/local/google_appengine/lib/yaml/lib')
+sys.path.insert(1, os.path.join(os.path.dirname(__file__), 'lib'))
 import webapp2
 from webapp2_extras import json
-from main import app, DozoR, SESSIONS
-from test_engine import app as dr_engine
 from paste import httpserver
 from multiprocessing import Process
+from main import app, DozoR, SESSIONS
+from test_engine import app as dr_engine
 
 
 class TestApp(TestCase):
@@ -284,20 +289,26 @@ class TestBot(TestCase):
         self.assertIn(u"Код принят", self.send_message(u"1d23r4"))
         self.assertIn(u"Код не принят", self.send_message(u"2d23r4"))
 
+    def test_remain(self):
+        response = self.send_message(u"/remain")
+        self.assertNotIn(u"/help", response)
+        self.assertIn(u"найдено кодов", response)
+
     def test_remain_codes(self):
         response = self.send_message(u"/codes")
         self.assertNotIn(u"/help", response)
-        self.assertIn(u"основные коды", response)
+        self.assertIn(u"Сектор 1 (осталось 7): 12 (1), 16 (1), 17 (1+), "
+                      u"18 (1), 22 (1), 23 (1+), 24 (1)", response)
 
     def test_time(self):
         response = self.send_message(u"/time")
         self.assertNotIn(u"/help", response)
-        self.assertIn("00:15:02", response)
+        self.assertIn("00:29:23", response)
 
 
 class TestCodeParsing(TestCase):
     def test_code(self):
-        d = DozoR(1)
+        d = DozoR({'id': 1, 'username': 'm_messiah'})
         d.enabled = True
         for prefix in [u"", u"27D"]:
             d.prefix = prefix
@@ -313,5 +324,5 @@ class TestCodeParsing(TestCase):
                          u"23R",
                          u"123Р6",
                          u"123Р"]:
-                result = d.code(code)
+                result = d.code({'text': code})
                 self.assertIn(u"войти в движок", result)
