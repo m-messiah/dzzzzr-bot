@@ -390,7 +390,6 @@ class DozoR(object):
             return code + " - " + (message.get_text()
                                    if message and message.get_text()
                                    else u"нет ответа.")
-
         if self.enabled:
             if message['text'].count(",") == 1:
                 try:

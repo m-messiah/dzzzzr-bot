@@ -282,9 +282,9 @@ class TestBot(TestCase):
         self.assertEqual(eta, self.send_gps(dmsr))
 
     def test_code(self):
-        self.assertIn(u"войти в движок", self.send_message(u"1d23r4"))
         self.send_message(
-            "/set_dzzzr http://127.0.0.1:5000/ spb_Captain 123456 bot password"
+            "/set_dzzzr http://127.0.0.1:5000/ spb_Captain 123456 "
+            "bot botpassword"
         )
         self.assertIn(u"Код принят", self.send_message(u"1d23r4"))
         self.assertIn(u"Код не принят", self.send_message(u"2d23r4"))
