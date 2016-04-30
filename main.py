@@ -354,7 +354,7 @@ class DozoR(object):
             if url == "":
                 return code + u" - сначала надо войти в движок"
             answer = browser.post(url, data={'action': "entcod",
-                                             'cod': code.decode("utf8").encode("cp1251")})
+                                             'cod': code.encode("cp1251")})
             if not answer:
                 return code + u" - Нет ответа. Проверьте вручную."
             try:
