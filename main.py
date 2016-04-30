@@ -1,7 +1,7 @@
 # coding=utf-8
 from base64 import b64decode, b64encode
 from random import choice
-from re import compile as re_compile
+from re import compile as re_compile, split as re_split
 from urllib import urlencode
 from zlib import decompress, MAX_WBITS
 import logging
@@ -285,27 +285,6 @@ class DozoR(object):
             return u" ".join(message.get_text().split()[:4])
         return u"Нет ответа"
 
-    def remain(self, _):
-        if self.url == "":
-            return u"Сначала надо войти в движок"
-        answer = self.browser.get(self.url)
-        if not answer:
-            return u"Нет ответа. Проверьте вручную."
-        try:
-            content = decompress(answer.content, 16 + MAX_WBITS)
-        except:
-            content = answer.content
-        answer = BeautifulSoup(
-            content.decode("cp1251", "ignore"),
-            'html.parser'
-        )
-        message = answer.find(
-            "div", text=re_compile(u"найдено кодов")
-        )
-        if message and message.get_text():
-            return message.get_text(strip=True)
-        return u"Нет ответа"
-
     def codes(self, _):
         if self.url == "":
             return u"Сначала надо войти в движок"
@@ -324,7 +303,7 @@ class DozoR(object):
             "strong", text=re_compile(u"Коды сложности")
         ).nextSibling
         if message and message.contents:
-            sectors = message.encode_contents().split("<br/>")
+            sectors = re_split("<br/?>", message.encode_contents())[:-1]
             result = []
             for sector in filter(len, sectors):
                 sector_name, _, codes = sector.partition(":")
@@ -338,7 +317,7 @@ class DozoR(object):
                         u", ".join(map(lambda t: u"%s (%s)" % (t[0], t[1]),
                                        codes))
                     ))
-            return result
+            return u"\n".join(result)
         return u"Нет ответа"
 
     def handle(self, message):

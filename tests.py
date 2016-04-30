@@ -289,11 +289,6 @@ class TestBot(TestCase):
         self.assertIn(u"Код принят", self.send_message(u"1d23r4"))
         self.assertIn(u"Код не принят", self.send_message(u"2d23r4"))
 
-    def test_remain(self):
-        response = self.send_message(u"/remain")
-        self.assertNotIn(u"/help", response)
-        self.assertIn(u"найдено кодов", response)
-
     def test_remain_codes(self):
         response = self.send_message(u"/codes")
         self.assertNotIn(u"/help", response)
