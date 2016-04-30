@@ -318,6 +318,7 @@ class TestCodeParsing(TestCase):
                          u"23R4",
                          u"23R",
                          u"123Р6",
+                         u"1 DстартR",
                          u"123Р"]:
                 result = d.code({'text': code})
                 self.assertIn(u"войти в движок", result)
