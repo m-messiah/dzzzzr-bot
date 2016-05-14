@@ -392,14 +392,12 @@ class DozoR(object):
                             code = self.prefix + code
                     result.append(send(self.browser, self.url, code))
             if len(result):
-                botan_track(self.chat_id, "code", message)
                 return u"\n".join(result)
 
         if u"привет" in message['text'].lower():
             if u"бот" in message['text'].lower():
                 botan_track(self.chat_id, "hello", message)
                 return u"Привет!"
-        botan_track(self.chat_id, 'message', message)
         return None
 
 
