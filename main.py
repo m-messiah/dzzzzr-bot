@@ -67,7 +67,7 @@ class DozoR(object):
             else:
                 raise ValueError
 
-            self.prefix = arguments[5] if len(arguments) > 5 else ""
+            self.prefix = arguments[5].upper() if len(arguments) > 5 else ""
 
         except ValueError:
             return (u"Использование:\n"
