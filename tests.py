@@ -266,6 +266,9 @@ class TestBot(TestCase):
         self.assertEqual(u"Привет",
                          self.send_message(u"/base64 0J/RgNC40LLQtdGC"))
 
+        self.assertEqual(u"MTAxMQ==",
+                         self.send_message(u"/base64 1011"))
+
     def test_pos(self):
         self.assertIn(u"абвя",
                       self.send_message(u"/pos 1 2 3 33"))

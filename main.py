@@ -155,7 +155,7 @@ class DozoR(object):
         return u"Команда не найдена. Используйте /help"
 
     def version(self, _):
-        return u"Версия: 2.8"
+        return u"Версия: 2.9"
 
     def help(self, _):
         return (
@@ -215,6 +215,7 @@ class DozoR(object):
         try:
             response = b64decode(arguments.encode("utf8"))
             assert len(response)
+            _ = response.decode("utf8").encode("utf8")
         except:
             response = b64encode(arguments.encode("utf8"))
         finally:
