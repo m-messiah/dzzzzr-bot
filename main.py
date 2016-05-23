@@ -435,6 +435,23 @@ class MainPage(webapp2.RequestHandler):
         except Exception:
             return self.show_error()
         response = None
+        if 'message' not in update:
+            if 'inline_query' in update:
+                self.response.headers['Content-Type'] = 'application/json'
+                self.response.write(json.encode({
+                    'method': 'answerInlineQuery',
+                    'inline_query_id': update['inline_query']['id'],
+                    'cache_time': 60,
+                    'results': json.encode([{
+                        'type': 'article',
+                        'id': "1",
+                        'title': "405",
+                        'message_text': "Inline mode not implemented",
+                        'description': "Inline-режим не реализован"
+                    }])
+                }))
+            return self.show_error()
+
         message = update['message']
         sender = message['chat']
         if "text" in message:
