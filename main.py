@@ -70,11 +70,11 @@ class DozoR(object):
                 if "[" not in arguments[5]:
                     self.prefix = arguments[5].upper()
                 else:
-                    self.dr_code = re_compile(ur"^%s+$" % arguments[5])
+                    self.dr_code = re_compile(ur"^%s$" % arguments[5])
             else:
                 self.prefix = ""
             if len(arguments) > 6:
-                self.dr_code = re_compile(ur"^[%s]+$" % arguments[6])
+                self.dr_code = re_compile(ur"^%s$" % arguments[6])
 
         except ValueError:
             return (
@@ -176,13 +176,17 @@ class DozoR(object):
             u"/start - команда заглушка, эмулирующая начало общения\n"
             u"/stop - команда удаляющая сессию общения с ботом\n"
             u"\nDozoR\n"
-            u"/set_dzzzr url captain pin login password [prefix] [regexp] - "
+            u"/set_dzzzr url captain pin login password - "
             u"  установить урл и учетные данные для движка DozoR.\n"
             u"Если все коды имеют префикс игры (например 27d),"
-            u"то его можно указать здесь "
+            u"то его можно указать здесь \n"
+            u"/set_dzzzr url captain pin login password prefix \n"
             u"и отправлять коды уже в сокращенном виде (12r3 = 27d12r3)\n"
             u"Если коды не стандартные, то можно указать regexp для того, "
-            u"как выглядит код (например, для 1d2r regexp будет 0-9dDrR)"
+            u"как выглядит код (например, для 1d2r regexp будет [0-9dDrR]+ )\n"
+            u"/set_dzzzr url captain pin login password [0-9dDrR]+ \n"
+            u"Префикс и regexp - необязательные параметры. "
+            u"(если нужны оба - сначала префикс, потом regexp)\n"
             u"\n/pause - приостанавливает отправку кодов\n"
             u"/resume - возобновляет отправку кодов\n"
             u"\nСами коды могут пристуствовать в любом сообщении в чате "
