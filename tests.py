@@ -238,6 +238,21 @@ class TestBot(TestCase):
                          "Arguments with prefix bad splitted")
         self.assertNotEqual("", SESSIONS[3798371].credentials)
         self.assertEqual("1D", SESSIONS[3798371].prefix)
+        self.send_message("/stop")
+        response = self.send_message(
+            "/set_dzzzr http://localhost:5000/ spb_Captain 123456 "
+            "bot botpassword 1D 0-9fbFB"
+        )
+
+        self.assertEqual(True, bool(SESSIONS[3798371].dr_code.search("fb")))
+        self.send_message("/stop")
+        response = self.send_message(
+            "/set_dzzzr http://localhost:5000/ spb_Captain 123456 "
+            "bot botpassword [0-9fbFB]"
+        )
+        self.assertEqual("", SESSIONS[3798371].prefix)
+        self.assertEqual(True, bool(SESSIONS[3798371].dr_code.search("fb")))
+        self.assertEqual(True, bool(SESSIONS[3798371].dr_code.match("1f23b4")))
 
     def test_not_found(self):
         self.assertEqual(u"Команда не найдена. Используйте /help",

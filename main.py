@@ -15,8 +15,6 @@ from webapp2_extras import json
 __author__ = 'm_messiah'
 __url__ = "https://dzzzr-bot.appspot.com"
 
-dr_code = re_compile(ur"^[0-9dDдДrRрР]+$")
-
 SESSIONS = {}
 CREDENTIALS = {}
 
@@ -58,6 +56,7 @@ class DozoR(object):
         self.enabled = False
         self.browser = Session()
         self.name = "@DzzzzR_bot"
+        self.dr_code = re_compile(ur"^[0-9dDдДrRрР]+$")
 
     def set_dzzzr(self, arguments):
         try:
@@ -67,11 +66,20 @@ class DozoR(object):
             else:
                 raise ValueError
 
-            self.prefix = arguments[5].upper() if len(arguments) > 5 else ""
+            if len(arguments) > 5:
+                if "[" not in arguments[5]:
+                    self.prefix = arguments[5].upper()
+                else:
+                    self.dr_code = re_compile(ur"^%s+$" % arguments[5])
+            else:
+                self.prefix = ""
+            if len(arguments) > 6:
+                self.dr_code = re_compile(ur"^[%s]+$" % arguments[6])
 
         except ValueError:
-            return (u"Использование:\n"
-                    u"/set_dzzzr url captain pin login password [prefix]")
+            return (
+                u"Использование:\n"
+                u"/set_dzzzr url captain pin login password [prefix] [regexp]")
         else:
             merged = "|".join((self.url, captain, login))
             if (merged in CREDENTIALS and
@@ -168,11 +176,13 @@ class DozoR(object):
             u"/start - команда заглушка, эмулирующая начало общения\n"
             u"/stop - команда удаляющая сессию общения с ботом\n"
             u"\nDozoR\n"
-            u"/set_dzzzr url captain pin login password [prefix] - "
+            u"/set_dzzzr url captain pin login password [prefix] [regexp] - "
             u"  установить урл и учетные данные для движка DozoR.\n"
             u"Если все коды имеют префикс игры (например 27d),"
             u"то его можно указать здесь "
             u"и отправлять коды уже в сокращенном виде (12r3 = 27d12r3)\n"
+            u"Если коды не стандартные, то можно указать regexp для того, "
+            u"как выглядит код (например, для 1d2r regexp будет 0-9dDrR)"
             u"\n/pause - приостанавливает отправку кодов\n"
             u"/resume - возобновляет отправку кодов\n"
             u"\nСами коды могут пристуствовать в любом сообщении в чате "
@@ -384,11 +394,13 @@ class DozoR(object):
             result = []
             if len(codes) < 1:
                 return None
-            if dr_code.match(codes[0]):
+            if self.dr_code.match(codes[0]):
                 for code in codes:
-                    if dr_code.match(code):
-                        code = code.upper().translate({ord(u'Д'): u'D',
-                                                       ord(u'Р'): u'R'})
+                    if self.dr_code.match(code):
+                        code = code.upper()
+                        if self.dr_code.search("DR"):
+                            code = code.translate({ord(u'Д'): u'D',
+                                                   ord(u'Р'): u'R'})
                         if self.prefix and self.prefix not in code:
                             code = self.prefix + code
                     result.append(send(self.browser, self.url, code))
