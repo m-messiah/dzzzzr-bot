@@ -163,7 +163,7 @@ class DozoR(object):
         return u"Команда не найдена. Используйте /help"
 
     def version(self, _):
-        return u"Версия: 2.9"
+        return u"Версия: 3.0"
 
     def help(self, _):
         return (
@@ -402,7 +402,7 @@ class DozoR(object):
                 for code in codes:
                     if self.dr_code.match(code):
                         code = code.upper()
-                        if self.dr_code.search("DR"):
+                        if self.dr_code.search(u"DR"):
                             code = code.translate({ord(u'Д'): u'D',
                                                    ord(u'Р'): u'R'})
                         if self.prefix and self.prefix not in code:

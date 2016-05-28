@@ -241,14 +241,14 @@ class TestBot(TestCase):
         self.send_message("/stop")
         response = self.send_message(
             "/set_dzzzr http://localhost:5000/ spb_Captain 123456 "
-            "bot botpassword 1D 0-9fbFB"
+            "bot botpassword 1D [0-9fbFB]+"
         )
 
         self.assertEqual(True, bool(SESSIONS[3798371].dr_code.search("fb")))
         self.send_message("/stop")
         response = self.send_message(
             "/set_dzzzr http://localhost:5000/ spb_Captain 123456 "
-            "bot botpassword [0-9fbFB]"
+            "bot botpassword [0-9fbFB]+"
         )
         self.assertEqual("", SESSIONS[3798371].prefix)
         self.assertEqual(True, bool(SESSIONS[3798371].dr_code.search("fb")))
