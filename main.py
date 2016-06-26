@@ -13,7 +13,6 @@ from google.appengine.api import urlfetch
 from webapp2_extras import json
 
 __author__ = 'm_messiah'
-__url__ = "https://dzzzr-bot.appspot.com"
 
 SESSIONS = {}
 CREDENTIALS = {}
@@ -160,10 +159,11 @@ class DozoR(object):
                 if fl else u"Сообщение доставлено не всем")
 
     def not_found(self, _):
-        return u"Команда не найдена. Используйте /help"
+        return (u"Команда не найдена. Используйте /help \n"
+                u"Или дайте денег автору, и он сделает такую команду")
 
     def version(self, _):
-        return u"Версия: 3.0"
+        return u"Версия: 3.1"
 
     def help(self, _):
         return (
@@ -340,6 +340,8 @@ class DozoR(object):
             command, _, arguments = message['text'].partition(" ")
             if self.name in command:
                 command = command[:command.find("@DzzzzR_bot")]
+            if "@" in command:
+                return None
             botan_track(self.chat_id, command, message)
             if command == "/set_dzzzr":
                 try:
@@ -426,6 +428,8 @@ def hello_message(user):
         u"Я буду отправлять найденные коды сразу в движок.",
         u"Буду краток - тебя ждали.",
         u"А мы тебя уже давно ждём.",
+        u"А меня зовут бот. Приятно познакомиться.",
+        u"Как %s?" % choice([u"оно", u"дела", u"жизнь", u"ты сюда попал(а)"]),
     ])
     return response
 

@@ -255,8 +255,8 @@ class TestBot(TestCase):
         self.assertEqual(True, bool(SESSIONS[3798371].dr_code.match("1f23b4")))
 
     def test_not_found(self):
-        self.assertEqual(u"Команда не найдена. Используйте /help",
-                         self.send_message("/abracadabra"))
+        self.assertIn(u"Команда не найдена. Используйте /help",
+                      self.send_message("/abracadabra"))
 
     def test_start(self):
         self.assertEqual(u"Внимательно слушаю!", self.send_message("/start"))
