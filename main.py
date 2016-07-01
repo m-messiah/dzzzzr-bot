@@ -354,7 +354,7 @@ class DozoR(object):
                 u"Или дайте денег автору, и он сделает такую команду")
 
     def version(self, _):
-        return u"Версия: 3.2"
+        return u"Версия: 3.2.1"
 
     def help(self, _):
         return (
@@ -506,9 +506,14 @@ class DozoR(object):
             content.decode("cp1251", "ignore"),
             'html.parser'
         )
-        message = answer.find(
-            "strong", text=re_compile(u"Коды сложности")
-        ).nextSibling
+        message = None
+        try:
+            message = answer.find(
+                "strong", text=re_compile(u"Коды сложности")
+            ).nextSibling
+        except:
+            return u"Коды сложности не найдены"
+
         if message and message.contents:
             sectors = re_split("<br/?>", message.encode_contents())[:-1]
             result = []
@@ -545,10 +550,9 @@ class DozoR(object):
                     return getattr(self, command[1:],
                                    self.not_found)(arguments)
                 except UnicodeEncodeError as e:
-                    logging.warning(e)
                     return self.not_found(None)
                 except Exception as e:
-                    logging.warning(e)
+                    logging.error(e)
                     return None
         else:
             try:
