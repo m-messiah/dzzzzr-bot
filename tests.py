@@ -145,7 +145,7 @@ class TestApp(TestCase):
                 }
             }
         })
-        _ = request.get_response(app)
+        request.get_response(app)
         self.assertIn(-11812986, SESSIONS)
 
 

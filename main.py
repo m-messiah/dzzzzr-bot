@@ -354,7 +354,7 @@ class DozoR(object):
                 u"Или дайте денег автору, и он сделает такую команду")
 
     def version(self, _):
-        return u"Версия: 3.1"
+        return u"Версия: 3.2"
 
     def help(self, _):
         return (
