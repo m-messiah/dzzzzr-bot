@@ -234,6 +234,18 @@ def botan_track(chat_id, event, message):
         return False
 
 
+def decode_page(page):
+    try:
+        page_content = page.content
+    except:
+        page_content = page.partial
+    try:
+        content = decompress(page_content, 16 + MAX_WBITS)
+    except:
+        content = page_content
+    return BeautifulSoup(content.decode("cp1251", "ignore"), 'html.parser')
+
+
 class DozoR(object):
     def __init__(self, sender):
         self.chat_id = sender['id']
@@ -245,6 +257,22 @@ class DozoR(object):
         self.browser = Session()
         self.name = "@DzzzzR_bot"
         self.dr_code = re_compile(ur"^[0-9dDдДrRрР]+$")
+
+    def get_dzzzr(self, code=None):
+        if code:
+            answer = self.browser.post(
+                self.url,
+                data={'action': "entcod",
+                      'cod': code.encode("cp1251")}
+            )
+        else:
+            answer = self.browser.get(self.url)
+        if not answer:
+            raise Exception(u"Нет ответа. Проверьте вручную.")
+        try:
+            return decode_page(answer)
+        except:
+            raise Exception(u"Нет ответа. Проверьте вручную.")
 
     def set_dzzzr(self, arguments):
         try:
@@ -291,14 +319,7 @@ class DozoR(object):
             if login_page.status_code != 200:
                 return u"Авторизация не удалась"
             else:
-                try:
-                    content = decompress(login_page.content, 16 + MAX_WBITS)
-                except:
-                    content = login_page.content
-                answer = BeautifulSoup(
-                    content.decode("cp1251", "ignore"),
-                    'html.parser'
-                )
+                answer = decode_page(login_page)
                 message = answer.find(class_="sysmsg")
                 if message and message.get_text():
                     message = message.get_text()
@@ -354,7 +375,7 @@ class DozoR(object):
                 u"Или дайте денег автору, и он сделает такую команду")
 
     def version(self, _):
-        return u"Версия: 3.2.1"
+        return u"Версия: 3.2.2"
 
     def help(self, _):
         return (
@@ -474,17 +495,11 @@ class DozoR(object):
     def time(self, _):
         if self.url == "":
             return u"Сначала надо войти в движок"
-        answer = self.browser.get(self.url)
-        if not answer:
-            return u"Нет ответа. Проверьте вручную."
         try:
-            content = decompress(answer.content, 16 + MAX_WBITS)
-        except:
-            content = answer.content
-        answer = BeautifulSoup(
-            content.decode("cp1251", "ignore"),
-            'html.parser'
-        )
+            answer = self.get_dzzzr()
+        except Exception as e:
+            return e.message
+
         message = answer.find(
             "p", text=re_compile(ur"Время на уровне: (\d\d:\d\d:\d\d)")
         )
@@ -495,17 +510,10 @@ class DozoR(object):
     def codes(self, _):
         if self.url == "":
             return u"Сначала надо войти в движок"
-        answer = self.browser.get(self.url)
-        if not answer:
-            return u"Нет ответа. Проверьте вручную."
         try:
-            content = decompress(answer.content, 16 + MAX_WBITS)
-        except:
-            content = answer.content
-        answer = BeautifulSoup(
-            content.decode("cp1251", "ignore"),
-            'html.parser'
-        )
+            answer = self.get_dzzzr()
+        except Exception as e:
+            return e.message
         message = None
         try:
             message = answer.find(
@@ -566,18 +574,10 @@ class DozoR(object):
         def send(browser, url, code):
             if url == "":
                 return code + u" - сначала надо войти в движок"
-            answer = browser.post(url, data={'action': "entcod",
-                                             'cod': code.encode("cp1251")})
-            if not answer:
-                return code + u" - Нет ответа. Проверьте вручную."
             try:
-                content = decompress(answer.content, 16 + MAX_WBITS)
-            except:
-                content = answer.content
-            answer = BeautifulSoup(
-                content.decode("cp1251", "ignore"),
-                'html.parser'
-            )
+                answer = self.get_dzzzr(code=code)
+            except Exception as e:
+                return e.message
             message = answer.find(class_="sysmsg")
             return code + " - " + (message.get_text()
                                    if message and message.get_text()
@@ -619,7 +619,6 @@ class DozoR(object):
 def hello_message(user):
     response = u"Привет, %s! " % user.get('first_name')
     response += choice([
-        u"У нас тут не курят.",
         u"Во время игры мы тут не флудим.",
         u"Я буду отправлять найденные коды сразу в движок.",
         u"Буду краток - тебя ждали.",
@@ -704,7 +703,7 @@ class MainPage(webapp2.RequestHandler):
         elif "left_chat_participant" in message:
             response = {'method': "sendMessage",
                         'chat_id': sender['id'],
-                        'text': u"И без него проживём.",
+                        'text': u"А я буду скучать...",
                         'disable_web_page_preview': True}
 
         self.response.headers['Content-Type'] = 'application/json'
