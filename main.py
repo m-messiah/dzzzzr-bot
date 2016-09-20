@@ -431,7 +431,7 @@ class DozoR(object):
     def about(self, _):
         return (u"Привет!\n"
                 u"Мой автор @m_messiah\n"
-                u"Сайт: https://m-messiah.ru\n"
+                u"Сайт: https://m-messiah.com\n"
                 u"\nА еще принимаются пожертвования:\n"
                 u"https://paypal.me/muzafarov\n"
                 u"http://yasobe.ru/na/m_messiah")
