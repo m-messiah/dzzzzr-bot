@@ -2,15 +2,16 @@
 from unittest import TestCase
 import sys
 import os.path
-sys.path.insert(1, '/usr/local/google_appengine')
-sys.path.insert(1, '/usr/local/google_appengine/lib/yaml/lib')
-sys.path.insert(1, os.path.join(os.path.dirname(__file__), 'lib'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lib'))
+sys.path.insert(0,
+    '/opt/google-cloud-sdk/platform/google_appengine/lib/yaml/lib')
+sys.path.insert(0, '/opt/google-cloud-sdk/platform/google_appengine')
 import webapp2
 from webapp2_extras import json
-from paste import httpserver
 from multiprocessing import Process
-from main import app, DozoR, SESSIONS
+from paste import httpserver
 from test_engine import app as dr_engine
+from main import app, DozoR, SESSIONS
 
 
 class TestApp(TestCase):
@@ -268,7 +269,7 @@ class TestBot(TestCase):
         self.assertEqual(
                 u"Привет!\n"
                 u"Мой автор @m_messiah\n"
-                u"Сайт: https://m-messiah.ru\n"
+                u"Сайт: https://m-messiah.com\n"
                 u"\nА еще принимаются пожертвования:\n"
                 u"https://paypal.me/muzafarov\n"
                 u"http://yasobe.ru/na/m_messiah",
@@ -312,6 +313,7 @@ class TestBot(TestCase):
         self.assertNotIn(u"/help", response)
         self.assertIn(u"Сектор 1 (осталось 7): 12 (1), 16 (1), 17 (1+), "
                       u"18 (1), 22 (1), 23 (1+), 24 (1)", response)
+        self.assertIn(u"Сектор 2 (осталось 0)", response)
 
     def test_time(self):
         response = self.send_message(u"/time")

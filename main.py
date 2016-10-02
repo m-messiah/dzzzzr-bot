@@ -235,10 +235,7 @@ def botan_track(chat_id, event, message):
 
 
 def decode_page(page):
-    try:
-        page_content = page.content
-    except:
-        page_content = page.partial
+    page_content = "".join(partial for partial in page.iter_content())
     try:
         content = decompress(page_content, 16 + MAX_WBITS)
     except:
@@ -263,10 +260,11 @@ class DozoR(object):
             answer = self.browser.post(
                 self.url,
                 data={'action': "entcod",
-                      'cod': code.encode("cp1251")}
+                      'cod': code.encode("cp1251")},
+                stream=True
             )
         else:
-            answer = self.browser.get(self.url)
+            answer = self.browser.get(self.url, stream=True)
         if not answer:
             raise Exception(u"Нет ответа. Проверьте вручную.")
         try:

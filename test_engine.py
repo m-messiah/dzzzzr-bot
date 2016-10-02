@@ -1,6 +1,11 @@
 # coding=utf-8
+import sys
+import os.path
+sys.path.insert(1, '/opt/google-cloud-sdk/platform/google_appengine')
+sys.path.insert(1,
+    '/opt/google-cloud-sdk/platform/google_appengine/lib/yaml/lib')
+sys.path.insert(1, os.path.join(os.path.dirname(__file__), 'lib'))
 import webapp2
-
 
 class Go(webapp2.RequestHandler):
     def get(self):
@@ -31,3 +36,7 @@ class Go(webapp2.RequestHandler):
 
 
 app = webapp2.WSGIApplication([('/', Go), ], debug=True)
+
+if __name__ == '__main__':
+    from paste import httpserver
+    httpserver.serve(app, host="127.0.0.1", port="5000")

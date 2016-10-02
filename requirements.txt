@@ -5,7 +5,7 @@
 #
 # Note: The `lib` directory is added to `sys.path` by `appengine_config.py`.
 webapp2
-webob
+WebOb
 requests
 beautifulsoup4
-paste
+Paste
