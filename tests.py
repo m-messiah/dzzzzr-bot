@@ -10,7 +10,7 @@ import webapp2
 from webapp2_extras import json
 from multiprocessing import Process
 from paste import httpserver
-from test_engine import app as dr_engine
+from test_classic_engine import app as dr_engine
 from main import app, DozoR, SESSIONS
 
 
@@ -21,9 +21,9 @@ class TestApp(TestCase):
         self.assertEqual(response.status_int, 200)
         self.assertIn("application/json", response.headers['Content-Type'])
         self.assertDictEqual(
-                json.decode(response.body),
-                {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)",
-                 "result": "Info"})
+            json.decode(response.body),
+            {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)",
+             "result": "Info"})
 
     def test_get(self):
         request = webapp2.Request.blank("/")
@@ -31,9 +31,9 @@ class TestApp(TestCase):
         self.assertEqual(response.status_int, 200)
         self.assertIn("application/json", response.headers['Content-Type'])
         self.assertDictEqual(
-                json.decode(response.body),
-                {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)",
-                 "result": "Info"})
+            json.decode(response.body),
+            {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)",
+             "result": "Info"})
 
     def test_bad_post(self):
         request = webapp2.Request.blank("/")
@@ -42,9 +42,9 @@ class TestApp(TestCase):
         self.assertEqual(response.status_int, 200)
         self.assertIn("application/json", response.headers['Content-Type'])
         self.assertDictEqual(
-                json.decode(response.body),
-                {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)",
-                 "result": "Info"})
+            json.decode(response.body),
+            {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)",
+             "result": "Info"})
 
     def test_json_empty_post(self):
         request = webapp2.Request.blank("/")
@@ -54,9 +54,9 @@ class TestApp(TestCase):
         self.assertEqual(response.status_int, 200)
         self.assertIn("application/json", response.headers['Content-Type'])
         self.assertDictEqual(
-                json.decode(response.body),
-                {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)",
-                 "result": "Info"})
+            json.decode(response.body),
+            {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)",
+             "result": "Info"})
 
     def test_json_start_post(self):
         request = webapp2.Request.blank("/")
@@ -85,14 +85,14 @@ class TestApp(TestCase):
         self.assertEqual(response.status_int, 200)
         self.assertIn("application/json", response.headers['Content-Type'])
         self.assertDictEqual(
-                json.decode(response.body),
-                {
-                    'method': 'sendMessage',
-                    'text': u"Внимательно слушаю!",
-                    'chat_id': -11812986,
-                    'disable_web_page_preview': True,
-                    'reply_to_message_id': 1,
-                }
+            json.decode(response.body),
+            {
+                'method': 'sendMessage',
+                'text': u"Внимательно слушаю!",
+                'chat_id': -11812986,
+                'disable_web_page_preview': True,
+                'reply_to_message_id': 1,
+            }
         )
 
     def test_json_text_post(self):
@@ -267,13 +267,13 @@ class TestBot(TestCase):
 
     def test_about(self):
         self.assertEqual(
-                u"Привет!\n"
-                u"Мой автор @m_messiah\n"
-                u"Сайт: https://m-messiah.com\n"
-                u"\nА еще принимаются пожертвования:\n"
-                u"https://paypal.me/muzafarov\n"
-                u"http://yasobe.ru/na/m_messiah",
-                self.send_message("/about")
+            u"Привет!\n"
+            u"Мой автор @m_messiah\n"
+            u"Сайт: https://m-messiah.com\n"
+            u"\nА еще принимаются пожертвования:\n"
+            u"https://paypal.me/muzafarov\n"
+            u"http://yasobe.ru/na/m_messiah",
+            self.send_message("/about")
         )
 
     def test_base64(self):

@@ -2,15 +2,16 @@
 import sys
 import os.path
 sys.path.insert(1, '/opt/google-cloud-sdk/platform/google_appengine')
-sys.path.insert(1,
-    '/opt/google-cloud-sdk/platform/google_appengine/lib/yaml/lib')
+sys.path.insert(
+    1, '/opt/google-cloud-sdk/platform/google_appengine/lib/yaml/lib')
 sys.path.insert(1, os.path.join(os.path.dirname(__file__), 'lib'))
 import webapp2
+
 
 class Go(webapp2.RequestHandler):
     def get(self):
         self.response.headers['Content-Type'] = "text/html; charset=cp1251"
-        self.response.write(open("test_engine.html").read()
+        self.response.write(open("test_classic_engine.html").read()
                             .replace("{{MESSAGE}}",
                                      u"Код не принят".encode("cp1251")))
 
@@ -31,7 +32,7 @@ class Go(webapp2.RequestHandler):
         else:
             message = u"Произошла ошибка. Ищите дальше"
 
-        self.response.write(open("test_engine.html").read()
+        self.response.write(open("test_classic_engine.html").read()
                             .replace("{{MESSAGE}}", message.encode("cp1251")))
 
 
