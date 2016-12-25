@@ -213,6 +213,11 @@ RUS = (1072, 1073, 1074, 1075, 1076, 1077, 1105, 1078, 1079, 1080, 1081, 1082,
 ENG = (97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111,
        112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122)
 
+LITE_MESSAGE = re_compile(
+    ur'<!--errorText--><p><strong>(.*?)</strong></p><!--errorTextEnd-->')
+LITE_TIME_ON = re_compile(ur'<!--timeOnLevelBegin (\d*?) timeOnLevelEnd-->')
+LITE_TIME_TO = re_compile(ur'<!--timeToFinishBegin (\d*?) timeToFinishEnd-->')
+
 
 def botan_track(chat_id, event, message):
     try:
@@ -251,9 +256,10 @@ class DozoR(object):
         self.prefix = ""
         self.credentials = ""
         self.enabled = False
+        self.classic = True
         self.browser = Session()
         self.name = "@DzzzzR_bot"
-        self.dr_code = re_compile(ur"^[0-9dDдДrRрР]+$")
+        self.dr_code = re_compile(ur"^[0-9dDдДrRlLzZрРлЛ]+$")
 
     def get_dzzzr(self, code=None):
         if code:
@@ -326,9 +332,41 @@ class DozoR(object):
                 if u"Авторизация пройдена успешно" not in message:
                     return message
                 self.enabled = True
+                self.classic = True
                 self.credentials = "|".join((self.url, captain, login))
                 CREDENTIALS[self.credentials] = self.chat_id
                 return u"Добро пожаловать, %s" % login
+
+    def set_lite(self, arguments):
+        try:
+            arguments = arguments.split()
+            if len(arguments) > 1:
+                self.url, pin = arguments[:2]
+            else:
+                raise ValueError
+        except ValueError:
+            return u"Использование:\n/set_lite url pin"
+        else:
+            self.browser.headers.update({
+                'referer': self.url,
+                'User-Agent': "Mozilla/5.0 " + choice(USERAGENTS)
+            })
+            login_page = self.browser.get(self.url, params={'pin': pin})
+            if login_page.status_code != 200:
+                return u"Авторизация не удалась"
+            else:
+                answer = decode_page(login_page)
+                message = LITE_MESSAGE.search(str(answer))
+                if message:
+                    message = message.group(1)
+                else:
+                    message = u"Авторизация не удалась"
+                    return message
+                self.enabled = True
+                self.classic = False
+                self.credentials = "|".join((self.url, pin))
+                CREDENTIALS[self.credentials] = self.chat_id
+                return message
 
     def show_sessions(self, _):
         return u"Сейчас используют:\n" + u"\n".join(CREDENTIALS.keys())
@@ -498,11 +536,24 @@ class DozoR(object):
         except Exception as e:
             return e.message
 
-        message = answer.find(
-            "p", text=re_compile(ur"Время на уровне: (\d\d:\d\d:\d\d)")
-        )
-        if message and message.get_text():
-            return u" ".join(message.get_text().split()[:4])
+        if self.classic:
+            message = answer.find(
+                "p", text=re_compile(ur"Время на уровне: (\d\d:\d\d:\d\d)")
+            )
+            if message and message.get_text():
+                return u" ".join(message.get_text().split()[:4])
+        else:
+            def to_minutes(sec):
+                return u"%s:%s" % (sec / 60, sec % 60)
+
+            on_level = LITE_TIME_ON.search(str(answer))
+            to_finish = LITE_TIME_TO.search(str(answer))
+            if on_level and to_finish:
+                return u"Время на уровне: %s, Осталось: %s" % (
+                    to_minutes(int(on_level.group(1))),
+                    to_minutes(int(to_finish.group(1))),
+                )
+
         return u"Нет ответа"
 
     def codes(self, _):
@@ -576,10 +627,15 @@ class DozoR(object):
                 answer = self.get_dzzzr(code=code)
             except Exception as e:
                 return e.message
-            message = answer.find(class_="sysmsg")
-            return code + " - " + (message.get_text()
-                                   if message and message.get_text()
-                                   else u"нет ответа.")
+            if self.classic:
+                message = answer.find(class_="sysmsg")
+                return code + " - " + (message.get_text()
+                                       if message and message.get_text()
+                                       else u"нет ответа.")
+            else:
+                message = LITE_MESSAGE.search(str(answer))
+                return code + u" - " + (message.group(1).decode("utf8")
+                                        if message else u"нет ответа")
         if self.enabled:
             if message['text'].count(",") == 1:
                 try:
@@ -594,13 +650,15 @@ class DozoR(object):
             result = []
             if len(codes) < 1:
                 return None
+            print(self.dr_code)
             if self.dr_code.match(codes[0]):
                 for code in codes:
                     if self.dr_code.match(code):
                         code = code.upper()
-                        if self.dr_code.search(u"DR"):
+                        if self.dr_code.search(u"D"):
                             code = code.translate({ord(u'Д'): u'D',
-                                                   ord(u'Р'): u'R'})
+                                                   ord(u'Р'): u'R',
+                                                   ord(u'Л'): u'L'})
                         if self.prefix and self.prefix not in code:
                             code = self.prefix + code
                     result.append(send(self.browser, self.url, code))

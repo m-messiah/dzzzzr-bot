@@ -10,14 +10,14 @@ import webapp2
 from webapp2_extras import json
 from multiprocessing import Process
 from paste import httpserver
-from test_classic_engine import app as dr_engine
+from test_lite_engine import app as lite_engine
 from main import app, SESSIONS
 
 
-class TestClassic(TestCase):
+class TestLite(TestCase):
     def setUp(self):
-        self.engine = Process(target=httpserver.serve, args=(dr_engine, ),
-                              kwargs={'host': "127.0.0.1", 'port': "5000"})
+        self.engine = Process(target=httpserver.serve, args=(lite_engine, ),
+                              kwargs={'host': "127.0.0.1", 'port': "5001"})
         self.engine.start()
 
     def tearDown(self):
@@ -25,10 +25,7 @@ class TestClassic(TestCase):
         self.engine.terminate()
 
     def auth(self):
-        self.send_message(
-            "/set_dzzzr http://127.0.0.1:5000/ spb_Captain 123456 "
-            "bot botpassword"
-        )
+        return self.send_message("/set_lite http://localhost:5001/ 123456")
 
     def send_message(self, text):
         request = webapp2.Request.blank("/")
@@ -62,55 +59,32 @@ class TestClassic(TestCase):
         self.assertIn('text', response)
         return response['text']
 
-    def test_set_dzzzr_small_arguments(self):
-        response = self.send_message(
-            "/set_dzzzr http://localhost:5000/ spb_Captain 123456 bot"
-        )
+    def test_auth_without_pin(self):
+        response = self.send_message("/set_lite http://localhost:5001/")
+        self.assertIn("/set_lite", response, "Accept not enough arguments")
 
-        self.assertIn("/set_dzzzr", response,
-                      "Accept not enough arguments")
+    def test_auth_bad_pin(self):
+        response = self.send_message("/set_lite http://localhost:5001/ 12345")
+        self.assertIn(u"Авторизация не удалась", response, "Bad password")
 
-    def test_set_dzzzr(self):
-        response = self.send_message(
-            "/set_dzzzr http://localhost:5000/ spb_Captain 123456 "
-            "bot botpassword 1D"
-        )
-        self.assertNotIn("/set_dzzzr", response,
-                         "Arguments with prefix bad splitted")
+    def test_auth_good(self):
+        response = self.auth()
+        self.assertNotIn("/set_lite", response, "Bad parse set_lite")
         self.assertNotEqual("", SESSIONS[3798371].credentials)
-        self.assertEqual("1D", SESSIONS[3798371].prefix)
-
-    def test_set_dzzzr_custom_mask_with_prefix(self):
-        self.send_message(
-            "/set_dzzzr http://localhost:5000/ spb_Captain 123456 "
-            "bot botpassword 1D [0-9fbFB]+"
-        )
-        self.assertEqual(True, bool(SESSIONS[3798371].dr_code.search("fb")))
-
-    def test_set_dzzzr_custom_mask(self):
-        self.send_message(
-            "/set_dzzzr http://localhost:5000/ spb_Captain 123456 "
-            "bot botpassword [0-9fbFB]+"
-        )
-        self.assertEqual("", SESSIONS[3798371].prefix)
-        self.assertEqual(True, bool(SESSIONS[3798371].dr_code.search("fb")))
-        self.assertEqual(True, bool(SESSIONS[3798371].dr_code.match("1f23b4")))
 
     def test_code(self):
         self.auth()
-        self.assertIn(u"Код принят", self.send_message(u"1d23r4"))
-        self.assertIn(u"Код не принят", self.send_message(u"2d23r4"))
+        self.assertIn(u"Код принят", self.send_message(u"1d23l4"))
+        self.assertIn(u"Код не принят", self.send_message(u"2d23l4"))
 
     def test_remain_codes(self):
         self.auth()
         response = self.send_message(u"/codes")
         self.assertNotIn(u"/help", response)
-        self.assertIn(u"Сектор 1 (осталось 7): 12 (1), 16 (1), 17 (1+), "
-                      u"18 (1), 22 (1), 23 (1+), 24 (1)", response)
-        self.assertIn(u"Сектор 2 (осталось 0)", response)
+        self.assertIn(u"(Всего - 6, принято - 2)", response)
 
     def test_time(self):
         self.auth()
         response = self.send_message(u"/time")
         self.assertNotIn(u"/help", response)
-        self.assertIn("00:29:23", response)
+        self.assertIn("18:50", response)

@@ -249,6 +249,7 @@ class TestBot(TestCase):
                       self.send_message(u"/pos 1 2 3 33"))
 
     def test_gps(self):
+        self.send_message('/resume')
         eta = (56.847222, 60.675)
         dd = u"56.847222, 60.675"
         dmr = u"56 50.8333, 60 40.5"
