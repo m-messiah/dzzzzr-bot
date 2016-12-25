@@ -3,14 +3,11 @@ from unittest import TestCase
 import sys
 import os.path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lib'))
-sys.path.insert(0,
-    '/opt/google-cloud-sdk/platform/google_appengine/lib/yaml/lib')
+sys.path.insert(
+    0, '/opt/google-cloud-sdk/platform/google_appengine/lib/yaml/lib')
 sys.path.insert(0, '/opt/google-cloud-sdk/platform/google_appengine')
 import webapp2
 from webapp2_extras import json
-from multiprocessing import Process
-from paste import httpserver
-from test_classic_engine import app as dr_engine
 from main import app, DozoR, SESSIONS
 
 
@@ -151,14 +148,6 @@ class TestApp(TestCase):
 
 
 class TestBot(TestCase):
-    def setUp(self):
-        self.engine = Process(target=httpserver.serve, args=(dr_engine, ),
-                              kwargs={'host': "127.0.0.1", 'port': "5000"})
-        self.engine.start()
-
-    def tearDown(self):
-        self.engine.terminate()
-
     def send_message(self, text):
         request = webapp2.Request.blank("/")
         request.method = "POST"
@@ -223,38 +212,6 @@ class TestBot(TestCase):
         self.assertEqual('sendLocation', response['method'])
         return response['latitude'], response['longitude']
 
-    def test_set_dzzzr(self):
-        response = self.send_message(
-            "/set_dzzzr http://localhost:5000/ spb_Captain 123456 bot"
-        )
-
-        self.assertIn("/set_dzzzr", response,
-                      "Accept not enough arguments")
-
-        response = self.send_message(
-            "/set_dzzzr http://localhost:5000/ spb_Captain 123456 "
-            "bot botpassword 1D"
-        )
-        self.assertNotIn("/set_dzzzr", response,
-                         "Arguments with prefix bad splitted")
-        self.assertNotEqual("", SESSIONS[3798371].credentials)
-        self.assertEqual("1D", SESSIONS[3798371].prefix)
-        self.send_message("/stop")
-        response = self.send_message(
-            "/set_dzzzr http://localhost:5000/ spb_Captain 123456 "
-            "bot botpassword 1D [0-9fbFB]+"
-        )
-
-        self.assertEqual(True, bool(SESSIONS[3798371].dr_code.search("fb")))
-        self.send_message("/stop")
-        response = self.send_message(
-            "/set_dzzzr http://localhost:5000/ spb_Captain 123456 "
-            "bot botpassword [0-9fbFB]+"
-        )
-        self.assertEqual("", SESSIONS[3798371].prefix)
-        self.assertEqual(True, bool(SESSIONS[3798371].dr_code.search("fb")))
-        self.assertEqual(True, bool(SESSIONS[3798371].dr_code.match("1f23b4")))
-
     def test_not_found(self):
         self.assertIn(u"Команда не найдена. Используйте /help",
                       self.send_message("/abracadabra"))
@@ -300,45 +257,26 @@ class TestBot(TestCase):
         self.assertEqual(eta, self.send_gps(dmr))
         self.assertEqual(eta, self.send_gps(dmsr))
 
-    def test_code(self):
-        self.send_message(
-            "/set_dzzzr http://127.0.0.1:5000/ spb_Captain 123456 "
-            "bot botpassword"
-        )
-        self.assertIn(u"Код принят", self.send_message(u"1d23r4"))
-        self.assertIn(u"Код не принят", self.send_message(u"2d23r4"))
-
-    def test_remain_codes(self):
-        response = self.send_message(u"/codes")
-        self.assertNotIn(u"/help", response)
-        self.assertIn(u"Сектор 1 (осталось 7): 12 (1), 16 (1), 17 (1+), "
-                      u"18 (1), 22 (1), 23 (1+), 24 (1)", response)
-        self.assertIn(u"Сектор 2 (осталось 0)", response)
-
-    def test_time(self):
-        response = self.send_message(u"/time")
-        self.assertNotIn(u"/help", response)
-        self.assertIn("00:29:23", response)
-
 
 class TestCodeParsing(TestCase):
-    def test_code(self):
-        d = DozoR({'id': 1, 'username': 'm_messiah'})
-        d.enabled = True
-        for prefix in [u"", u"27D"]:
-            d.prefix = prefix
+    def setUp(self):
+        self.d = DozoR({'id': 1, 'username': 'm_messiah'})
+        self.d.enabled = True
 
-            for code in [u"1D23R4",
-                         u"1д23р4",
-                         u"D23R4",
-                         u"1D234R",
-                         u"1D2D34R",
-                         u"1D23R4R",
-                         u"D234R",
-                         u"23R4",
-                         u"23R",
-                         u"123Р6",
-                         u"1 DстартR",
-                         u"123Р"]:
-                result = d.code({'text': code})
-                self.assertIn(u"войти в движок", result)
+
+def generator_codes(prefix, code):
+    def test(self):
+        self.d.prefix = prefix
+        result = self.d.code({'text': code})
+        self.assertIn(u"войти в движок", result)
+    return test
+
+
+for prefix in [u"", u"27D"]:
+    for num, code in enumerate(
+        [u"1D23R4", u"1д23р4", u"D23R4", u"1D234R", u"1D2D34R",
+         u"1D23R4R", u"D234R", u"23R4", u"23R", u"123Р6",
+         u"1 DстартR", u"123Р"]):
+        setattr(TestCodeParsing,
+                "test_code_parsing_%s_%s" % (prefix, num),
+                generator_codes(prefix, code))
