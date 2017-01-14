@@ -245,7 +245,7 @@ def decode_page(page):
         content = decompress(page_content, 16 + MAX_WBITS)
     except:
         content = page_content
-    return BeautifulSoup(content.decode("cp1251", "ignore"), 'html.parser')
+    return BeautifulSoup(content, 'html.parser', from_encoding="cp1251")
 
 
 class DozoR(object):
@@ -267,10 +267,9 @@ class DozoR(object):
                 self.url,
                 data={'action': "entcod",
                       'cod': code.encode("cp1251")},
-                stream=True
             )
         else:
-            answer = self.browser.get(self.url, stream=True)
+            answer = self.browser.get(self.url)
         if not answer:
             raise Exception(u"Нет ответа. Проверьте вручную.")
         try:
@@ -538,7 +537,7 @@ class DozoR(object):
 
         if self.classic:
             message = answer.find(
-                "p", text=re_compile(ur"Время на уровне: (\d\d:\d\d:\d\d)")
+                "p", string=re_compile(u"Время на уровне:")
             )
             if message and message.get_text():
                 return u" ".join(message.get_text().split()[:4])
@@ -566,7 +565,7 @@ class DozoR(object):
         message = None
         try:
             message = answer.find(
-                "strong", text=re_compile(u"Коды сложности")
+                "strong", string=re_compile(u"Коды сложности")
             ).nextSibling
         except:
             return u"Коды сложности не найдены"
@@ -650,7 +649,6 @@ class DozoR(object):
             result = []
             if len(codes) < 1:
                 return None
-            print(self.dr_code)
             if self.dr_code.match(codes[0]):
                 for code in codes:
                     if self.dr_code.match(code):
