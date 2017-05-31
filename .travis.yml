@@ -20,5 +20,3 @@ deploy:
   keyfile: client_secret.json
   project: dzzzr-bot
   default: true
-  on:
-    branch: master
