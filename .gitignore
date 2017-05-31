@@ -1,4 +1,4 @@
 .idea
 *.pyc
-client-secret.json
+client_secret.json
 lib/
