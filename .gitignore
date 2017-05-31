@@ -1,4 +1,4 @@
 .idea
 *.pyc
-bot_token.py
+client-secret.json
 lib/

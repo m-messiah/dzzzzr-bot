@@ -8,4 +8,4 @@ webapp2
 WebOb
 requests
 beautifulsoup4
-Paste
+paste
