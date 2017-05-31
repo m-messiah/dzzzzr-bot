@@ -4,8 +4,8 @@ import sys
 import os.path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lib'))
 sys.path.insert(
-    0, '/opt/google-cloud-sdk/platform/google_appengine/lib/yaml/lib')
-sys.path.insert(0, '/opt/google-cloud-sdk/platform/google_appengine')
+    0, '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/platform/google_appengine/lib/yaml/lib')
+sys.path.insert(0, '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/platform/google_appengine')
 import webapp2
 from webapp2_extras import json
 from multiprocessing import Process
@@ -43,12 +43,12 @@ class TestClassic(TestCase):
                     u'username': u'm_messiah',
                     u'first_name': u'Maxim',
                     u'last_name': u'Muzafarov',
-                    u'id': 3798371
+                    u'id': 1
                 },
                 u'message_id': 1,
                 u'chat': {
                     u'type': u'user',
-                    u'id': 3798371,
+                    u'id': 1,
                     u'username': u'm_messiah',
                     u'first_name': u'Maxim',
                     u'last_name': u'Muzafarov',
@@ -77,24 +77,24 @@ class TestClassic(TestCase):
         )
         self.assertNotIn("/set_dzzzr", response,
                          "Arguments with prefix bad splitted")
-        self.assertNotEqual("", SESSIONS[3798371].credentials)
-        self.assertEqual("1D", SESSIONS[3798371].prefix)
+        self.assertNotEqual("", SESSIONS[1].credentials)
+        self.assertEqual("1D", SESSIONS[1].prefix)
 
     def test_set_dzzzr_custom_mask_with_prefix(self):
         self.send_message(
             "/set_dzzzr http://localhost:5000/ spb_Captain 123456 "
             "bot botpassword 1D [0-9fbFB]+"
         )
-        self.assertEqual(True, bool(SESSIONS[3798371].dr_code.search("fb")))
+        self.assertEqual(True, bool(SESSIONS[1].dr_code.search("fb")))
 
     def test_set_dzzzr_custom_mask(self):
         self.send_message(
             "/set_dzzzr http://localhost:5000/ spb_Captain 123456 "
             "bot botpassword [0-9fbFB]+"
         )
-        self.assertEqual("", SESSIONS[3798371].prefix)
-        self.assertEqual(True, bool(SESSIONS[3798371].dr_code.search("fb")))
-        self.assertEqual(True, bool(SESSIONS[3798371].dr_code.match("1f23b4")))
+        self.assertEqual("", SESSIONS[1].prefix)
+        self.assertEqual(True, bool(SESSIONS[1].dr_code.search("fb")))
+        self.assertEqual(True, bool(SESSIONS[1].dr_code.match("1f23b4")))
 
     def test_code(self):
         self.auth()

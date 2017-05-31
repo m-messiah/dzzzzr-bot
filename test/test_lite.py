@@ -4,8 +4,8 @@ import sys
 import os.path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lib'))
 sys.path.insert(
-    0, '/opt/google-cloud-sdk/platform/google_appengine/lib/yaml/lib')
-sys.path.insert(0, '/opt/google-cloud-sdk/platform/google_appengine')
+    0, '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/platform/google_appengine/lib/yaml/lib')
+sys.path.insert(0, '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/platform/google_appengine')
 import webapp2
 from webapp2_extras import json
 from multiprocessing import Process
@@ -40,12 +40,12 @@ class TestLite(TestCase):
                     u'username': u'm_messiah',
                     u'first_name': u'Maxim',
                     u'last_name': u'Muzafarov',
-                    u'id': 3798371
+                    u'id': 1
                 },
                 u'message_id': 1,
                 u'chat': {
                     u'type': u'user',
-                    u'id': 3798371,
+                    u'id': 1,
                     u'username': u'm_messiah',
                     u'first_name': u'Maxim',
                     u'last_name': u'Muzafarov',
@@ -70,7 +70,7 @@ class TestLite(TestCase):
     def test_auth_good(self):
         response = self.auth()
         self.assertNotIn("/set_lite", response, "Bad parse set_lite")
-        self.assertNotEqual("", SESSIONS[3798371].credentials)
+        self.assertNotEqual("", SESSIONS[1].credentials)
 
     def test_code(self):
         self.auth()

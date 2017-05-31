@@ -1,9 +1,9 @@
 # coding=utf-8
 import sys
 import os.path
-sys.path.insert(1, '/opt/google-cloud-sdk/platform/google_appengine')
+sys.path.insert(1, '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/platform/google_appengine')
 sys.path.insert(
-    1, '/opt/google-cloud-sdk/platform/google_appengine/lib/yaml/lib')
+    1, '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/platform/google_appengine/lib/yaml/lib')
 CWD = os.path.dirname(__file__)
 sys.path.insert(1, os.path.join(CWD, '../lib'))
 import webapp2

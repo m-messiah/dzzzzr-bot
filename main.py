@@ -323,27 +323,28 @@ class DozoR(object):
             return e.message
         message = None
         try:
-            message = answer.find(
-                "strong", string=re_compile(u"Коды сложности")
-            ).nextSibling
+            message = answer.find("strong", string=re_compile(u"Коды сложности")).parent
         except:
             return u"Коды сложности не найдены"
 
-        if message and message.contents:
+        if message:
             sectors = re_split("<br/?>", message.encode_contents())[:-1]
             result = []
             for sector in filter(len, sectors):
-                sector_name, _, codes = sector.partition(":")
-                _, __, codes = codes.partition(":")
-                codes = filter(lambda c: "span" not in c[1],
-                               enumerate(codes.strip().split(", "), start=1))
-                result.append(
-                    u"%s (осталось %s): %s" % (
-                        sector_name.decode("utf8"),
-                        len(codes),
-                        u", ".join(map(lambda t: u"%s (%s)" % (t[0], t[1]),
-                                       codes))
-                    ))
+                try:
+                    sector_name, _, codes = sector.partition(":")
+                    _, __, codes = codes.partition(":")
+                    codes = filter(lambda c: "span" not in c[1],
+                                   enumerate(codes.strip().split(", "), start=1))
+                    result.append(
+                        u"%s (осталось %s): %s" % (
+                            sector_name.decode("utf8"),
+                            len(codes),
+                            u", ".join(map(lambda t: u"%s (%s)" % (t[0], t[1]),
+                                           codes))
+                        ))
+                except:
+                    pass
             return u"\n".join(result)
         return u"Нет ответа"
 

@@ -4,8 +4,8 @@ import sys
 import os.path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lib'))
 sys.path.insert(
-    0, '/opt/google-cloud-sdk/platform/google_appengine/lib/yaml/lib')
-sys.path.insert(0, '/opt/google-cloud-sdk/platform/google_appengine')
+    0, '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/platform/google_appengine/lib/yaml/lib')
+sys.path.insert(0, '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/platform/google_appengine')
 import webapp2
 from webapp2_extras import json
 from main import app, DozoR, SESSIONS
@@ -68,12 +68,12 @@ class TestApp(TestCase):
                     u'username': u'm_messiah',
                     u'first_name': u'Maxim',
                     u'last_name': u'Muzafarov',
-                    u'id': 3798371
+                    u'id': 1
                 },
                 u'message_id': 1,
                 u'chat': {
                     u'type': u'group',
-                    u'id': -11812986,
+                    u'id': -1,
                     u'title': u'КС'
                 }
             }
@@ -86,7 +86,7 @@ class TestApp(TestCase):
             {
                 'method': 'sendMessage',
                 'text': u"Внимательно слушаю!",
-                'chat_id': -11812986,
+                'chat_id': -1,
                 'disable_web_page_preview': True,
                 'reply_to_message_id': 1,
             }
@@ -105,12 +105,12 @@ class TestApp(TestCase):
                     u'username': u'm_messiah',
                     u'first_name': u'Maxim',
                     u'last_name': u'Muzafarov',
-                    u'id': 3798371
+                    u'id': 1
                 },
                 u'message_id': 1,
                 u'chat': {
                     u'type': u'group',
-                    u'id': -11812986,
+                    u'id': -1,
                     u'title': u'КС'
                 }
             }
@@ -133,18 +133,18 @@ class TestApp(TestCase):
                     u'username': u'm_messiah',
                     u'first_name': u'Maxim',
                     u'last_name': u'Muzafarov',
-                    u'id': 3798371
+                    u'id': 1
                 },
                 u'message_id': 1,
                 u'chat': {
                     u'type': u'group',
-                    u'id': -11812986,
+                    u'id': -1,
                     u'title': u'КС'
                 }
             }
         })
         request.get_response(app)
-        self.assertIn(-11812986, SESSIONS)
+        self.assertIn(-1, SESSIONS)
 
 
 class TestBot(TestCase):
@@ -161,12 +161,12 @@ class TestBot(TestCase):
                     u'username': u'm_messiah',
                     u'first_name': u'Maxim',
                     u'last_name': u'Muzafarov',
-                    u'id': 3798371
+                    u'id': 1
                 },
                 u'message_id': 1,
                 u'chat': {
                     u'type': u'user',
-                    u'id': 3798371,
+                    u'id': 1,
                     u'username': u'm_messiah',
                     u'first_name': u'Maxim',
                     u'last_name': u'Muzafarov',
@@ -193,12 +193,12 @@ class TestBot(TestCase):
                     u'username': u'm_messiah',
                     u'first_name': u'Maxim',
                     u'last_name': u'Muzafarov',
-                    u'id': 3798371
+                    u'id': 1
                 },
                 u'message_id': 1,
                 u'chat': {
                     u'type': u'user',
-                    u'id': 3798371,
+                    u'id': 1,
                     u'username': u'm_messiah',
                     u'first_name': u'Maxim',
                     u'last_name': u'Muzafarov',
@@ -219,14 +219,14 @@ class TestBot(TestCase):
     def test_start(self):
         self.assertEqual(u"Внимательно слушаю!", self.send_message("/start"))
 
-    def test_show_sess(self):
-        self.assertIn(u"Сейчас используют", self.send_message("/show_sess"))
+    def test_show_sessions(self):
+        self.assertIn(u"Сейчас используют", self.send_message("/show_sessions"))
 
     def test_about(self):
         self.assertEqual(
             u"Привет!\n"
             u"Мой автор @m_messiah\n"
-            u"Сайт: https://m-messiah.com\n"
+            u"Мой код: https://github.com/m-messiah/dzzzzr-bot\n"
             u"\nА еще принимаются пожертвования:\n"
             u"https://paypal.me/muzafarov\n"
             u"http://yasobe.ru/na/m_messiah",
