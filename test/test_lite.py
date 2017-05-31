@@ -9,8 +9,6 @@ sys.path.insert(0, '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk
 # travis
 sys.path.insert(1, 'google_appengine')
 sys.path.insert(1, 'google_appengine/lib/yaml/lib')
-CWD = os.path.dirname(__file__)
-sys.path.insert(1, os.path.join(CWD, '../lib'))
 import webapp2
 from webapp2_extras import json
 from multiprocessing import Process
