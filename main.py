@@ -2,14 +2,12 @@
 from base64 import b64decode, b64encode
 from random import choice
 from re import compile as re_compile, split as re_split
-from urllib import urlencode
 from zlib import decompress, MAX_WBITS
 import logging
 
 import webapp2
 from bs4 import BeautifulSoup
 from requests import Session
-from google.appengine.api import urlfetch
 from webapp2_extras import json
 
 from useragents import USERAGENTS
@@ -33,12 +31,12 @@ LITE_TIME_TO = re_compile(ur'<!--timeToFinishBegin (\d*?) timeToFinishEnd-->')
 
 
 def decode_page(page):
-    page_content = "".join(partial for partial in page.iter_content())
+    page_content = page.raw.read()
     try:
         content = decompress(page_content, 16 + MAX_WBITS)
     except:
         content = page_content
-    return BeautifulSoup(content, 'html.parser', from_encoding="cp1251")
+    return BeautifulSoup(content, 'html.parser', from_encoding="windows-1251")
 
 
 class DozoR(object):
@@ -60,9 +58,10 @@ class DozoR(object):
                 self.url,
                 data={'action': "entcod",
                       'cod': code.encode("cp1251")},
+                stream=True
             )
         else:
-            answer = self.browser.get(self.url)
+            answer = self.browser.get(self.url, stream=True)
         if not answer:
             raise Exception(u"Нет ответа. Проверьте вручную.")
         try:
@@ -94,7 +93,7 @@ class DozoR(object):
                 u"/set_dzzzr url captain pin login password [prefix] [regexp]")
         else:
             merged = "|".join((self.url, captain, login))
-            if (merged in CREDENTIALS and self.chat_id != CREDENTIALS[merged]):
+            if merged in CREDENTIALS and self.chat_id != CREDENTIALS[merged]:
                 return (u"Бот уже используется этой командой. В чате %s\n"
                         u"Сначала остановите его. (/stop)\n"
                         % SESSIONS[CREDENTIALS[merged]].title)
@@ -110,7 +109,8 @@ class DozoR(object):
                     'password': password,
                     'action': "auth",
                     'notags': ''
-                }
+                },
+                stream=True
             )
             if login_page.status_code != 200:
                 return u"Авторизация не удалась"
@@ -143,7 +143,7 @@ class DozoR(object):
                 'referer': self.url,
                 'User-Agent': "Mozilla/5.0 " + choice(USERAGENTS)
             })
-            login_page = self.browser.get(self.url, params={'pin': pin})
+            login_page = self.browser.get(self.url, params={'pin': pin}, stream=True)
             if login_page.status_code != 200:
                 return u"Авторизация не удалась"
             else:
@@ -292,7 +292,7 @@ class DozoR(object):
         try:
             answer = self.get_dzzzr()
         except Exception as e:
-            return e.message
+            return unicode(e.message)
 
         if self.classic:
             message = answer.find(
@@ -320,28 +320,29 @@ class DozoR(object):
         try:
             answer = self.get_dzzzr()
         except Exception as e:
-            return e.message
+            return unicode(e.message)
         message = None
         try:
             message = answer.find("strong", string=re_compile(u"Коды сложности")).parent
         except:
             return u"Коды сложности не найдены"
-
         if message:
-            sectors = re_split("<br/?>", message.encode_contents())[:-1]
+            message = unicode(message).split(u"Коды сложности")[1]
+            sectors = re_split("<br/?>", message)[:-1]
             result = []
             for sector in filter(len, sectors):
                 try:
-                    sector_name, _, codes = sector.partition(":")
-                    _, __, codes = codes.partition(":")
-                    codes = filter(lambda c: "span" not in c[1],
-                                   enumerate(codes.strip().split(", "), start=1))
+                    sector_name, _, codes = sector.partition(u":")
+                    _, __, codes = codes.partition(u":")
+                    if not codes:
+                        continue
+                    codes = filter(lambda c: u"span" not in c[1],
+                                   enumerate(codes.strip().split(u", "), start=1))
                     result.append(
                         u"%s (осталось %s): %s" % (
-                            sector_name.decode("utf8"),
+                            sector_name,
                             len(codes),
-                            u", ".join(map(lambda t: u"%s (%s)" % (t[0], t[1]),
-                                           codes))
+                            u", ".join(map(lambda t: u"%s (%s)" % (t[0], t[1]), codes))
                         ))
                 except:
                     pass
@@ -356,14 +357,13 @@ class DozoR(object):
             if "@" in command:
                 return None
             if command == "/set_dzzzr":
-                try:
+                # try:
                     return self.set_dzzzr(arguments)
-                except Exception as e:
-                    return "Incorrect format (%s)" % e
+                # except Exception as e:
+                #     return "Incorrect format (%s)" % e
             else:
                 try:
-                    return getattr(self, command[1:],
-                                   self.not_found)(arguments)
+                    return getattr(self, command[1:], self.not_found)(arguments)
                 except UnicodeEncodeError as e:
                     return self.not_found(None)
                 except Exception as e:
@@ -516,7 +516,7 @@ class MainPage(webapp2.RequestHandler):
                         'chat_id': sender['id'],
                         'text': u"А я буду скучать...",
                         'disable_web_page_preview': True}
-
+                        
         self.response.headers['Content-Type'] = 'application/json'
         self.response.write(json.encode(response if response else {}))
 

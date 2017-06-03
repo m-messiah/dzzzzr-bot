@@ -84,7 +84,12 @@ class TestLite(TestCase):
         self.auth()
         response = self.send_message(u"/codes")
         self.assertNotIn(u"/help", response)
-        self.assertIn(u"(Всего - 6, принято - 2)", response)
+        self.assertIn(u"Сектор Город (осталось 0):", response)
+        self.assertIn(u"Сектор Район (осталось 0):", response)
+        self.assertIn(u"Сектор Улица (осталось 1): 1 (null)", response)
+        self.assertIn(u"Сектор Дом (осталось 1): 1 (null)", response)
+        self.assertIn(u"Сектор Пров.код (осталось 1): 1 (1)", response)
+        self.assertIn(u"Сектор Локация (осталось 1): 1 (3+)", response)
 
     def test_time(self):
         self.auth()
