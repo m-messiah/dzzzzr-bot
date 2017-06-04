@@ -357,10 +357,10 @@ class DozoR(object):
             if "@" in command:
                 return None
             if command == "/set_dzzzr":
-                # try:
+                try:
                     return self.set_dzzzr(arguments)
-                # except Exception as e:
-                #     return "Incorrect format (%s)" % e
+                except Exception as e:
+                    return "Incorrect format (%s)" % e
             else:
                 try:
                     return getattr(self, command[1:], self.not_found)(arguments)
