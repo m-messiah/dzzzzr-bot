@@ -461,7 +461,7 @@ class MainPage(webapp2.RequestHandler):
         except Exception:
             return self.show_error()
         response = None
-        if 'message' not in update:
+        if 'message' not in update and 'edited_message' not in update:
             if 'inline_query' in update:
                 self.response.headers['Content-Type'] = 'application/json'
                 self.response.write(json.encode({
@@ -478,7 +478,7 @@ class MainPage(webapp2.RequestHandler):
                 }))
             return self.show_error()
 
-        message = update['message']
+        message = update.get('message', update.get('edited_message'))
         sender = message['chat']
         if "text" in message:
             logging.debug(message['text'])
@@ -516,7 +516,7 @@ class MainPage(webapp2.RequestHandler):
                         'chat_id': sender['id'],
                         'text': u"А я буду скучать...",
                         'disable_web_page_preview': True}
-                        
+
         self.response.headers['Content-Type'] = 'application/json'
         self.response.write(json.encode(response if response else {}))
 
