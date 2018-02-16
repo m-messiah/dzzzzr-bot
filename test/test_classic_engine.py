@@ -1,9 +1,10 @@
 # coding=utf-8
 import sys
 import os.path
-sys.path.insert(1, '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/platform/google_appengine')
-sys.path.insert(
-    1, '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/platform/google_appengine/lib/yaml/lib')
+# mac os
+google_cloud_sdk_path = '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/platform/google_appengine'
+sys.path.insert(1, google_cloud_sdk_path)
+sys.path.insert(1, google_cloud_sdk_path + '/lib/yaml/lib')
 # travis
 sys.path.insert(1, 'google_appengine')
 sys.path.insert(1, 'google_appengine/lib/yaml/lib')
@@ -38,7 +39,8 @@ class Go(webapp2.RequestHandler):
 
         self.response.write(
             open(os.path.join(CWD, 'test_classic_engine.html')).read()
-            .replace("{{MESSAGE}}", message.encode("cp1251")))
+            .replace("{{MESSAGE}}", message.encode("cp1251"))
+        )
 
 
 app = webapp2.WSGIApplication([('/', Go), ], debug=True)

@@ -1,11 +1,13 @@
 # coding=utf-8
 from unittest import TestCase
 import sys
+import time
 import os.path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lib'))
-sys.path.insert(
-    0, '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/platform/google_appengine/lib/yaml/lib')
-sys.path.insert(0, '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/platform/google_appengine')
+# mac os
+google_cloud_sdk_path = '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/platform/google_appengine'
+sys.path.insert(0, google_cloud_sdk_path + '/lib/yaml/lib')
+sys.path.insert(0, google_cloud_sdk_path)
 # travis
 sys.path.insert(1, 'google_appengine')
 sys.path.insert(1, 'google_appengine/lib/yaml/lib')
@@ -22,16 +24,15 @@ class TestClassic(TestCase):
         self.engine = Process(target=httpserver.serve, args=(dr_engine, ),
                               kwargs={'host': "127.0.0.1", 'port': "5000"})
         self.engine.start()
+        time.sleep(1)
 
     def tearDown(self):
         self.send_message('/stop')
         self.engine.terminate()
+        time.sleep(1)
 
     def auth(self):
-        self.send_message(
-            "/set_dzzzr http://127.0.0.1:5000/ spb_Captain 123456 "
-            "bot botpassword"
-        )
+        self.send_message("/set_dzzzr http://127.0.0.1:5000/ spb_Captain 123456 bot botpassword")
 
     def send_message(self, text):
         request = webapp2.Request.blank("/")
@@ -66,35 +67,21 @@ class TestClassic(TestCase):
         return response['text']
 
     def test_set_dzzzr_small_arguments(self):
-        response = self.send_message(
-            "/set_dzzzr http://localhost:5000/ spb_Captain 123456 bot"
-        )
-
-        self.assertIn("/set_dzzzr", response,
-                      "Accept not enough arguments")
+        response = self.send_message("/set_dzzzr http://localhost:5000/ spb_Captain 123456 bot")
+        self.assertIn("/set_dzzzr", response, "Accept not enough arguments")
 
     def test_set_dzzzr(self):
-        response = self.send_message(
-            "/set_dzzzr http://localhost:5000/ spb_Captain 123456 "
-            "bot botpassword 1D"
-        )
-        self.assertNotIn("/set_dzzzr", response,
-                         "Arguments with prefix bad splitted")
+        response = self.send_message("/set_dzzzr http://localhost:5000/ spb_Captain 123456 bot botpassword 1D")
+        self.assertNotIn("/set_dzzzr", response, "Arguments with prefix bad splitted")
         self.assertNotEqual("", SESSIONS[1].credentials)
         self.assertEqual("1D", SESSIONS[1].prefix)
 
     def test_set_dzzzr_custom_mask_with_prefix(self):
-        self.send_message(
-            "/set_dzzzr http://localhost:5000/ spb_Captain 123456 "
-            "bot botpassword 1D [0-9fbFB]+"
-        )
+        self.send_message("/set_dzzzr http://localhost:5000/ spb_Captain 123456 bot botpassword 1D [0-9fbFB]+")
         self.assertEqual(True, bool(SESSIONS[1].dr_code.search("fb")))
 
     def test_set_dzzzr_custom_mask(self):
-        self.send_message(
-            "/set_dzzzr http://localhost:5000/ spb_Captain 123456 "
-            "bot botpassword [0-9fbFB]+"
-        )
+        self.send_message("/set_dzzzr http://localhost:5000/ spb_Captain 123456 bot botpassword [0-9fbFB]+")
         self.assertEqual("", SESSIONS[1].prefix)
         self.assertEqual(True, bool(SESSIONS[1].dr_code.search("fb")))
         self.assertEqual(True, bool(SESSIONS[1].dr_code.match("1f23b4")))
@@ -108,8 +95,7 @@ class TestClassic(TestCase):
         self.auth()
         response = self.send_message(u"/codes")
         self.assertNotIn(u"/help", response)
-        self.assertIn(u"Сектор 1 (осталось 7): 12 (1), 16 (1), 17 (1+), "
-                      u"18 (1), 22 (1), 23 (1+), 24 (1)", response)
+        self.assertIn(u"Сектор 1 (осталось 7): 12 (1), 16 (1), 17 (1+), 18 (1), 22 (1), 23 (1+), 24 (1)", response)
         self.assertIn(u"Сектор 2 (осталось 0)", response)
 
     def test_time(self):

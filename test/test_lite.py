@@ -1,11 +1,13 @@
 # coding=utf-8
 from unittest import TestCase
 import sys
+import time
 import os.path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lib'))
-sys.path.insert(
-    0, '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/platform/google_appengine/lib/yaml/lib')
-sys.path.insert(0, '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/platform/google_appengine')
+# mac os
+google_cloud_sdk_path = '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/platform/google_appengine'
+sys.path.insert(0, google_cloud_sdk_path + '/lib/yaml/lib')
+sys.path.insert(0, google_cloud_sdk_path)
 # travis
 sys.path.insert(1, 'google_appengine')
 sys.path.insert(1, 'google_appengine/lib/yaml/lib')
@@ -22,10 +24,12 @@ class TestLite(TestCase):
         self.engine = Process(target=httpserver.serve, args=(lite_engine, ),
                               kwargs={'host': "127.0.0.1", 'port': "5001"})
         self.engine.start()
+        time.sleep(1)
 
     def tearDown(self):
         self.send_message('/stop')
         self.engine.terminate()
+        time.sleep(1)
 
     def auth(self):
         return self.send_message("/set_lite http://localhost:5001/ 123456")

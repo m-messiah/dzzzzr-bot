@@ -24,8 +24,7 @@ RUS = (1072, 1073, 1074, 1075, 1076, 1077, 1105, 1078, 1079, 1080, 1081, 1082,
 ENG = (97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111,
        112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122)
 
-LITE_MESSAGE = re_compile(
-    ur'<!--errorText--><p><strong>(.*?)</strong></p><!--errorTextEnd-->')
+LITE_MESSAGE = re_compile(ur'<!--errorText--><p><strong>(.*?)</strong></p><!--errorTextEnd-->')
 LITE_TIME_ON = re_compile(ur'<!--timeOnLevelBegin (\d*?) timeOnLevelEnd-->')
 LITE_TIME_TO = re_compile(ur'<!--timeToFinishBegin (\d*?) timeToFinishEnd-->')
 
@@ -56,8 +55,10 @@ class DozoR(object):
         if code:
             answer = self.browser.post(
                 self.url,
-                data={'action': "entcod",
-                      'cod': code.encode("cp1251")},
+                data={
+                    'action': "entcod",
+                    'cod': code.encode("cp1251")
+                },
                 stream=True
             )
         else:
@@ -95,8 +96,7 @@ class DozoR(object):
             merged = "|".join((self.url, captain, login))
             if merged in CREDENTIALS and self.chat_id != CREDENTIALS[merged]:
                 return (u"Бот уже используется этой командой. В чате %s\n"
-                        u"Сначала остановите его. (/stop)\n"
-                        % SESSIONS[CREDENTIALS[merged]].title)
+                        u"Сначала остановите его. (/stop)\n" % SESSIONS[CREDENTIALS[merged]].title)
             self.browser.headers.update({
                 'referer': self.url,
                 'User-Agent': "Mozilla/5.0 " + choice(USERAGENTS)
@@ -205,8 +205,7 @@ class DozoR(object):
 
     def pause(self, _):
         self.enabled = False
-        return (u"Ок, я больше не буду реагировать на сообщения мне "
-                u"(не считая команды). "
+        return (u"Ок, я больше не буду реагировать на сообщения мне (не считая команды).\n"
                 u"Не забудьте потом включить с помощью /resume")
 
     def resume(self, _):
@@ -277,10 +276,7 @@ class DozoR(object):
                 result = []
                 for lat in coords[1]:
                     d, m, s = map(float, lat[:3])
-                    result.append(round(
-                        d + (m * 60 + s) / 3600 * (-1 if d < 0 else 1),
-                        6
-                    ))
+                    result.append(round(d + (m * 60 + s) / 3600 * (-1 if d < 0 else 1), 6))
                 return tuple(result)
             return None
         except:
@@ -295,9 +291,7 @@ class DozoR(object):
             return unicode(e.message)
 
         if self.classic:
-            message = answer.find(
-                "p", string=re_compile(u"Время на уровне:")
-            )
+            message = answer.find("p", string=re_compile(u"Время на уровне:"))
             if message and message.get_text():
                 return u" ".join(message.get_text().split()[:4])
         else:
@@ -387,13 +381,10 @@ class DozoR(object):
                 return e.message
             if self.classic:
                 message = answer.find(class_="sysmsg")
-                return code + " - " + (message.get_text()
-                                       if message and message.get_text()
-                                       else u"нет ответа.")
+                return code + " - " + (message.get_text() if message and message.get_text() else u"нет ответа.")
             else:
                 message = LITE_MESSAGE.search(str(answer))
-                return code + u" - " + (message.group(1).decode("utf8")
-                                        if message else u"нет ответа")
+                return code + u" - " + (message.group(1).decode("utf8") if message else u"нет ответа")
         if self.enabled:
             if message['text'].count(",") == 1:
                 try:
@@ -502,8 +493,7 @@ class MainPage(webapp2.RequestHandler):
         elif "contact" in message:
             response = {'method': "sendMessage",
                         'chat_id': sender['id'],
-                        'text': "id = %s"
-                                % message['contact'].get('user_id', "none"),
+                        'text': "id = %s" % message['contact'].get('user_id', "none"),
                         'reply_to_message_id': message['message_id'],
                         'disable_web_page_preview': True}
         elif "new_chat_participant" in message:

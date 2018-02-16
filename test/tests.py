@@ -3,9 +3,10 @@ from unittest import TestCase
 import sys
 import os.path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lib'))
-sys.path.insert(
-    0, '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/platform/google_appengine/lib/yaml/lib')
-sys.path.insert(0, '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/platform/google_appengine')
+# mac os
+google_cloud_sdk_path = '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/platform/google_appengine'
+sys.path.insert(0, google_cloud_sdk_path + '/lib/yaml/lib')
+sys.path.insert(0, google_cloud_sdk_path)
 # travis
 sys.path.insert(1, 'google_appengine')
 sys.path.insert(1, 'google_appengine/lib/yaml/lib')
@@ -22,8 +23,8 @@ class TestApp(TestCase):
         self.assertIn("application/json", response.headers['Content-Type'])
         self.assertDictEqual(
             json.decode(response.body),
-            {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)",
-             "result": "Info"})
+            {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)", "result": "Info"}
+        )
 
     def test_get(self):
         request = webapp2.Request.blank("/")
@@ -32,8 +33,8 @@ class TestApp(TestCase):
         self.assertIn("application/json", response.headers['Content-Type'])
         self.assertDictEqual(
             json.decode(response.body),
-            {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)",
-             "result": "Info"})
+            {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)", "result": "Info"}
+        )
 
     def test_bad_post(self):
         request = webapp2.Request.blank("/")
@@ -43,8 +44,8 @@ class TestApp(TestCase):
         self.assertIn("application/json", response.headers['Content-Type'])
         self.assertDictEqual(
             json.decode(response.body),
-            {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)",
-             "result": "Info"})
+            {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)", "result": "Info"}
+        )
 
     def test_json_empty_post(self):
         request = webapp2.Request.blank("/")
@@ -55,8 +56,8 @@ class TestApp(TestCase):
         self.assertIn("application/json", response.headers['Content-Type'])
         self.assertDictEqual(
             json.decode(response.body),
-            {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)",
-             "result": "Info"})
+            {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)", "result": "Info"}
+        )
 
     def test_json_start_post(self):
         request = webapp2.Request.blank("/")
@@ -216,8 +217,7 @@ class TestBot(TestCase):
         return response['latitude'], response['longitude']
 
     def test_not_found(self):
-        self.assertIn(u"Команда не найдена. Используйте /help",
-                      self.send_message("/abracadabra"))
+        self.assertIn(u"Команда не найдена. Используйте /help", self.send_message("/abracadabra"))
 
     def test_start(self):
         self.assertEqual(u"Внимательно слушаю!", self.send_message("/start"))
@@ -237,19 +237,13 @@ class TestBot(TestCase):
         )
 
     def test_base64(self):
-        self.assertEqual(u"0J/RgNC40LLQtdGC",
-                         self.send_message(u"/base64 Привет"))
-        self.assertEqual(u"Привет",
-                         self.send_message(u"/base64 0J/RgNC40LLQtdGC"))
-
-        self.assertEqual(u"MTAxMQ==",
-                         self.send_message(u"/base64 1011"))
+        self.assertEqual(u"0J/RgNC40LLQtdGC", self.send_message(u"/base64 Привет"))
+        self.assertEqual(u"Привет", self.send_message(u"/base64 0J/RgNC40LLQtdGC"))
+        self.assertEqual(u"MTAxMQ==", self.send_message(u"/base64 1011"))
 
     def test_pos(self):
-        self.assertIn(u"абвя",
-                      self.send_message(u"/pos 1 2 3 33"))
-        self.assertIn(u"abcg",
-                      self.send_message(u"/pos 1 2 3 33"))
+        self.assertIn(u"абвя", self.send_message(u"/pos 1 2 3 33"))
+        self.assertIn(u"abcg", self.send_message(u"/pos 1 2 3 33"))
 
     def test_gps(self):
         self.send_message('/resume')
@@ -281,6 +275,4 @@ for prefix in [u"", u"27D"]:
         [u"1D23R4", u"1д23р4", u"D23R4", u"1D234R", u"1D2D34R",
          u"1D23R4R", u"D234R", u"23R4", u"23R", u"123Р6",
          u"1 DстартR", u"123Р"]):
-        setattr(TestCodeParsing,
-                "test_code_parsing_%s_%s" % (prefix, num),
-                generator_codes(prefix, code))
+        setattr(TestCodeParsing, "test_code_parsing_%s_%s" % (prefix, num), generator_codes(prefix, code))
