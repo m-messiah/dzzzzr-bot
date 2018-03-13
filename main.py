@@ -33,7 +33,7 @@ def decode_page(page):
     page_content = page.raw.read()
     try:
         content = decompress(page_content, 16 + MAX_WBITS)
-    except:
+    except Exception:
         content = page_content
     return BeautifulSoup(content, 'html.parser', from_encoding="windows-1251")
 
@@ -67,7 +67,7 @@ class DozoR(object):
             raise Exception(u"Нет ответа. Проверьте вручную.")
         try:
             return decode_page(answer)
-        except:
+        except Exception:
             raise Exception(u"Нет ответа. Проверьте вручную.")
 
     def set_dzzzr(self, arguments):
@@ -217,7 +217,7 @@ class DozoR(object):
             self.enabled = False
             del CREDENTIALS[self.credentials]
             del SESSIONS[self.chat_id]
-        except:
+        except Exception:
             pass
         return u"До новых встреч!"
 
@@ -235,7 +235,7 @@ class DozoR(object):
             response = b64decode(arguments.encode("utf8"))
             assert len(response)
             response.decode("utf8").encode("utf8")
-        except:
+        except Exception:
             response = b64encode(arguments.encode("utf8"))
         finally:
             return response
@@ -246,7 +246,7 @@ class DozoR(object):
         except ValueError:
             try:
                 positions = list(map(int, text.split(",")))
-            except:
+            except Exception:
                 return None
 
         return u"\n".join((
@@ -279,7 +279,7 @@ class DozoR(object):
                     result.append(round(d + (m * 60 + s) / 3600 * (-1 if d < 0 else 1), 6))
                 return tuple(result)
             return None
-        except:
+        except Exception:
             pass
 
     def time(self, _):
@@ -318,7 +318,7 @@ class DozoR(object):
         message = None
         try:
             message = answer.find("strong", string=re_compile(u"Коды сложности")).parent
-        except:
+        except Exception:
             return u"Коды сложности не найдены"
         if message:
             message = unicode(message).split(u"Коды сложности")[1]
@@ -338,7 +338,7 @@ class DozoR(object):
                             len(codes),
                             u", ".join(map(lambda t: u"%s (%s)" % (t[0], t[1]), codes))
                         ))
-                except:
+                except Exception:
                     pass
             return u"\n".join(result)
         return u"Нет ответа"
@@ -368,7 +368,7 @@ class DozoR(object):
                 response = self.code(message)
                 if response:
                     return response
-            except:
+            except Exception:
                 pass
 
     def code(self, message):
@@ -391,7 +391,7 @@ class DozoR(object):
                     result = self.gps(message['text'])
                     if result:
                         return result
-                except:
+                except Exception:
                     pass
 
             codes = message['text'].split()

@@ -10,6 +10,7 @@ install:
 - pip install Paste
 - pip install -r requirements.txt -t lib
 script:
+- flake8 --exclude lib --ignore E402
 - nosetests test
 before_deploy:
 - rm -rf google_appengine_1.9.67.zip google_appengine .git
