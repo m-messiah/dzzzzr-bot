@@ -8,6 +8,7 @@ before_install:
 - openssl aes-256-cbc -K $encrypted_ad8499d072ee_key -iv $encrypted_ad8499d072ee_iv -in client_secret.json.enc -out client_secret.json -d
 install:
 - pip install Paste
+- pip install flake8
 - pip install -r requirements.txt -t lib
 script:
 - flake8 --exclude lib --ignore E402
