@@ -1,6 +1,6 @@
 # DozoR telegram bot
 
-[![Travis](https://img.shields.io/travis/m-messiah/dzzzzr-bot.svg?style=flat-square)](https://travis-ci.org/m-messiah/dzzzzr-bot)[![Test Coverage](https://api.codeclimate.com/v1/badges/37cd4d9a1b6cb56ca1ba/test_coverage)](https://codeclimate.com/github/m-messiah/dzzzzr-bot/test_coverage)
+[![Travis](https://img.shields.io/travis/m-messiah/dzzzzr-bot.svg?style=flat-square)](https://travis-ci.org/m-messiah/dzzzzr-bot)[![Maintainability](https://api.codeclimate.com/v1/badges/37cd4d9a1b6cb56ca1ba/maintainability)](https://codeclimate.com/github/m-messiah/dzzzzr-bot/maintainability)[![Test Coverage](https://api.codeclimate.com/v1/badges/37cd4d9a1b6cb56ca1ba/test_coverage)](https://codeclimate.com/github/m-messiah/dzzzzr-bot/test_coverage)
 [@DzzzzR_bot](https://telegram.me/DzzzzR_bot)
 
 Telegram бот, который умеет авторизовываться в движке classic.dzzzr.ru и отправлять коды из чата (и некоторое другое)
