@@ -77,7 +77,7 @@ class TestLite(TestCase):
     def test_auth_good(self):
         response = self.auth()
         self.assertNotIn("/set_lite", response, "Bad parse set_lite")
-        self.assertNotEqual("", SESSIONS[1].credentials)
+        self.assertNotEqual("", SESSIONS[1].dozor.credentials)
 
     def test_code(self):
         self.auth()

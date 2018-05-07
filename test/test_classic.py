@@ -81,18 +81,18 @@ class TestClassic(TestCase):
     def test_set_dzzzr(self):
         response = self.send_message("/set_dzzzr http://localhost:5000/ spb_Captain 123456 bot botpassword 1D")
         self.assertNotIn("/set_dzzzr", response, "Arguments with prefix bad splitted")
-        self.assertNotEqual("", SESSIONS[1].credentials)
-        self.assertEqual("1D", SESSIONS[1].prefix)
+        self.assertNotEqual("", SESSIONS[1].dozor.credentials)
+        self.assertEqual("1D", SESSIONS[1].dozor.prefix)
 
     def test_set_dzzzr_custom_mask_with_prefix(self):
         self.send_message("/set_dzzzr http://localhost:5000/ spb_Captain 123456 bot botpassword 1D [0-9fbFB]+")
-        self.assertEqual(True, bool(SESSIONS[1].dr_code.search("fb")))
+        self.assertEqual(True, bool(SESSIONS[1].dozor.dr_code.search("fb")))
 
     def test_set_dzzzr_custom_mask(self):
         self.send_message("/set_dzzzr http://localhost:5000/ spb_Captain 123456 bot botpassword [0-9fbFB]+")
-        self.assertEqual("", SESSIONS[1].prefix)
-        self.assertEqual(True, bool(SESSIONS[1].dr_code.search("fb")))
-        self.assertEqual(True, bool(SESSIONS[1].dr_code.match("1f23b4")))
+        self.assertEqual("", SESSIONS[1].dozor.prefix)
+        self.assertEqual(True, bool(SESSIONS[1].dozor.dr_code.search("fb")))
+        self.assertEqual(True, bool(SESSIONS[1].dozor.dr_code.match("1f23b4")))
 
     def test_set_dzzzr_separate_chats(self):
         self.auth()

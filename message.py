@@ -3,7 +3,7 @@ import logging
 from random import choice
 
 import main
-from dozor import DozoR
+from bot import Bot
 
 
 class Message(dict):
@@ -46,14 +46,14 @@ class Message(dict):
         logging.debug(self['text'])
         sender_id = self.get_sender_id()
         if sender_id not in main.SESSIONS:
-            main.SESSIONS[sender_id] = DozoR(self.get_sender())
+            main.SESSIONS[sender_id] = Bot(self.get_sender())
 
         session = main.SESSIONS[sender_id]
         try:
             if self['text'][0] == '/':
                 output = session.handle_command(self['text'])
             else:
-                output = session.code(self)
+                output = session.handle_text(self)
         except Exception:
             return {}
 

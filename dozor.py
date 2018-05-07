@@ -1,6 +1,4 @@
 # coding=utf-8
-import logging
-from base64 import b64decode, b64encode
 from random import choice
 from re import compile as re_compile
 from re import split as re_split
@@ -13,15 +11,6 @@ import main
 from useragents import USERAGENTS
 
 __author__ = 'm_messiah'
-
-CREDENTIALS = {}
-
-RUS = (1072, 1073, 1074, 1075, 1076, 1077, 1105, 1078, 1079, 1080, 1081, 1082,
-       1083, 1084, 1085, 1086, 1087, 1088, 1089, 1090, 1091, 1092, 1093, 1094,
-       1095, 1096, 1097, 1098, 1099, 1100, 1101, 1102, 1103)
-
-ENG = (97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111,
-       112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122)
 
 LITE_MESSAGE = re_compile(ur'<!--errorText--><p><strong>(.*?)</strong></p><!--errorTextEnd-->')
 LITE_TIME_ON = re_compile(ur'<!--timeOnLevelBegin (\d*?) timeOnLevelEnd-->')
@@ -38,17 +27,45 @@ def decode_page(page):
 
 
 class DozoR(object):
-    def __init__(self, sender):
-        self.chat_id = sender['id']
-        self.title = sender.get('title', sender.get('username', ''))
+    def __init__(self, chat_id):
+        self.chat_id = chat_id
         self.url = ""
         self.prefix = ""
         self.credentials = ""
         self.enabled = False
         self.classic = True
         self.browser = Session()
-        self.name = "@DzzzzR_bot"
         self.dr_code = re_compile(ur"^[0-9dDдДrRlLzZрРлЛ]+$")
+
+    def help(self):
+        return (
+            u"/set_dzzzr url captain pin login password - "
+            u"  установить урл и учетные данные для движка DozoR.\n"
+            u"Если все коды имеют префикс игры (например 27d),"
+            u"то его можно указать здесь \n"
+            u"/set_dzzzr url captain pin login password prefix \n"
+            u"и отправлять коды уже в сокращенном виде (12r3 = 27d12r3)\n"
+            u"Если коды не стандартные, то можно указать regexp для того, "
+            u"как выглядит код (например, для 1d2r regexp будет [0-9dDrR]+ )\n"
+            u"/set_dzzzr url captain pin login password [0-9dDrR]+ \n"
+            u"Префикс и regexp - необязательные параметры. "
+            u"(если нужны оба - сначала префикс, потом regexp)\n"
+            u"\n/pause - приостанавливает отправку кодов\n"
+            u"/resume - возобновляет отправку кодов\n"
+            u"\nСами коды могут пристуствовать в любом сообщении в чате "
+            u"как с русскими буквами, так и английскими, "
+            u"игнорируя регистр символов. "
+            u"(Главное, чтобы сообщение начиналось с кода)"
+        )
+
+    def pause(self, _):
+        self.enabled = False
+        return (u"Ок, я больше не буду реагировать на сообщения мне (не считая команды).\n"
+                u"Не забудьте потом включить с помощью /resume")
+
+    def resume(self, _):
+        self.enabled = True
+        return u"Я вернулся! Давайте ваши коды!"
 
     def get_dzzzr(self, code=None):
         try:
@@ -93,9 +110,9 @@ class DozoR(object):
                 u"/set_dzzzr url captain pin login password [prefix] [regexp]")
         else:
             merged = "|".join((self.url, captain, login))
-            if merged in CREDENTIALS and self.chat_id != CREDENTIALS[merged]:
+            if merged in main.CREDENTIALS and self.chat_id != main.CREDENTIALS[merged]:
                 return (u"Бот уже используется этой командой. В чате %s\n"
-                        u"Сначала остановите его. (/stop)\n" % main.SESSIONS[CREDENTIALS[merged]].title)
+                        u"Сначала остановите его. (/stop)\n" % main.SESSIONS[main.CREDENTIALS[merged]].title)
             self.browser.headers.update({
                 'referer': self.url,
                 'User-Agent': "Mozilla/5.0 " + choice(USERAGENTS)
@@ -125,7 +142,7 @@ class DozoR(object):
                 self.enabled = True
                 self.classic = True
                 self.credentials = "|".join((self.url, captain, login))
-                CREDENTIALS[self.credentials] = self.chat_id
+                main.CREDENTIALS[self.credentials] = self.chat_id
                 return u"Добро пожаловать, %s" % login
 
     def set_lite(self, arguments):
@@ -156,142 +173,8 @@ class DozoR(object):
                 self.enabled = True
                 self.classic = False
                 self.credentials = "|".join((self.url, pin))
-                CREDENTIALS[self.credentials] = self.chat_id
+                main.CREDENTIALS[self.credentials] = self.chat_id
                 return message
-
-    def show_sessions(self, _):
-        sessions = ["%s (%s)" % (v.title, k) for k, v in main.SESSIONS.items()]
-        return u"Сейчас используют:\n" + u"\n".join(sessions)
-
-    def not_found(self, _):
-        return (u"Команда не найдена. Используйте /help \n"
-                u"Или дайте денег автору, и он сделает такую команду")
-
-    def version(self, _):
-        return u"Версия: 3.2.3"
-
-    def help(self, _):
-        return (
-            u"Я могу принимать следующие команды:\n"
-            u"/help - эта справка\n"
-            u"/about - информация об авторе\n"
-            u"/base64 <text> - Base64 кодирование/раскодирование\n"
-            u"/pos <num1 num2 numN> - Слово из порядковых букв в алфавите\n"
-            u"/gps <lat, long> - Карта по координатам\n"
-            u"/start - команда заглушка, эмулирующая начало общения\n"
-            u"/stop - команда удаляющая сессию общения с ботом\n"
-            u"\nDozoR\n"
-            u"/set_dzzzr url captain pin login password - "
-            u"  установить урл и учетные данные для движка DozoR.\n"
-            u"Если все коды имеют префикс игры (например 27d),"
-            u"то его можно указать здесь \n"
-            u"/set_dzzzr url captain pin login password prefix \n"
-            u"и отправлять коды уже в сокращенном виде (12r3 = 27d12r3)\n"
-            u"Если коды не стандартные, то можно указать regexp для того, "
-            u"как выглядит код (например, для 1d2r regexp будет [0-9dDrR]+ )\n"
-            u"/set_dzzzr url captain pin login password [0-9dDrR]+ \n"
-            u"Префикс и regexp - необязательные параметры. "
-            u"(если нужны оба - сначала префикс, потом regexp)\n"
-            u"\n/pause - приостанавливает отправку кодов\n"
-            u"/resume - возобновляет отправку кодов\n"
-            u"\nСами коды могут пристуствовать в любом сообщении в чате "
-            u"как с русскими буквами, так и английскими, "
-            u"игнорируя регистр символов. "
-            u"(Главное, чтобы сообщение начиналось с кода)")
-
-    def start(self, _):
-        return u"Внимательно слушаю!"
-
-    def pause(self, _):
-        self.enabled = False
-        return (u"Ок, я больше не буду реагировать на сообщения мне (не считая команды).\n"
-                u"Не забудьте потом включить с помощью /resume")
-
-    def resume(self, _):
-        self.enabled = True
-        return u"Я вернулся! Давайте ваши коды!"
-
-    def stop(self, _):
-        try:
-            self.enabled = False
-            del CREDENTIALS[self.credentials]
-            del main.SESSIONS[self.chat_id]
-        except Exception:
-            pass
-        return u"До новых встреч!"
-
-    def about(self, _):
-        return (u"Привет!\n"
-                u"Мой автор @m_messiah\n"
-                u"Мой код: https://github.com/m-messiah/dzzzzr-bot\n"
-                u"\nА еще принимаются пожертвования:\n"
-                u"https://paypal.me/muzafarov\n"
-                u"http://yasobe.ru/na/m_messiah")
-
-    def base64(self, arguments):
-        response = None
-        try:
-            response = b64decode(arguments.encode("utf8"))
-            assert len(response)
-            response.decode("utf8").encode("utf8")
-        except Exception:
-            response = b64encode(arguments.encode("utf8"))
-        finally:
-            return response
-
-    def _construct_from_pos(self, positions, lang):
-        return u"".join(map(lambda i: unichr(lang[(i - 1) % len(lang)]), positions))
-
-    def pos(self, text):
-        try:
-            positions = list(map(int, text.split()))
-        except ValueError:
-            try:
-                positions = list(map(int, text.split(",")))
-            except Exception:
-                return None
-
-        return u"\n".join(self._construct_from_pos(positions, lang) for lang in (RUS, ENG))
-
-    def _gps_dd(self, coords):
-        return tuple(map(lambda x: round(float(x[0]), 6), coords))
-
-    def _gps_dmr(self, coords):
-        result = []
-        for lat in coords:
-            d, m = map(float, lat[:2])
-            result.append(round(d + m / 60 * (-1 if d < 0 else 1), 6))
-        return tuple(result)
-
-    def _gps_dmsr(self, coords):
-        result = []
-        for lat in coords:
-            d, m, s = map(float, lat[:3])
-            result.append(round(d + (m * 60 + s) / 3600 * (-1 if d < 0 else 1), 6))
-        return tuple(result)
-
-    def _split_gps(self, text):
-        raw_coords = text.split(",")
-        coords = [0, [[], []]]
-        for i, lat in enumerate(raw_coords):
-            lat = lat.split()
-            count = len(lat)
-            if count > coords[0]:
-                coords[0] = count
-            coords[1][i] = lat
-        return coords
-
-    def gps(self, text):
-        try:
-            coords = self._split_gps(text)
-            if coords[0] == 1:
-                return self._gps_dd(coords[1])
-            if coords[0] == 2:
-                return self._gps_dmr(coords[1])
-            if coords[0] == 3:
-                return self._gps_dmsr(coords[1])
-        except Exception:
-            pass
 
     def time(self, _):
         answer, message = self._get_dzzzr_answer()
@@ -354,26 +237,6 @@ class DozoR(object):
             return u"\n".join(result)
         return u"Нет ответа"
 
-    def handle_command(self, text):
-        command, _, arguments = text.partition(" ")
-        if self.name in command:
-            command = command[:command.find("@DzzzzR_bot")]
-        if "@" in command:
-            return None
-        if command == "/set_dzzzr":
-            try:
-                return self.set_dzzzr(arguments)
-            except Exception as e:
-                return "Incorrect format (%s)" % e
-        else:
-            try:
-                return getattr(self, command[1:], self.not_found)(arguments)
-            except UnicodeEncodeError as e:
-                return self.not_found(None)
-            except Exception as e:
-                logging.error(e)
-                return None
-
     def _send_code(self, code):
         if self.url == "":
             return code + u" - сначала надо войти в движок"
@@ -381,12 +244,15 @@ class DozoR(object):
             answer = self.get_dzzzr(code=code)
         except Exception as e:
             return e.message
-        if self.classic:
-            message = answer.find(class_="sysmsg")
-            return code + " - " + (message.get_text() if message and message.get_text() else u"нет ответа.")
-        else:
-            message = LITE_MESSAGE.search(str(answer))
-            return code + u" - " + (message.group(1).decode("utf8") if message else u"нет ответа")
+        try:
+            if self.classic:
+                message = answer.find(class_="sysmsg")
+                return code + " - " + (message.get_text() if message and message.get_text() else u"нет ответа.")
+            else:
+                message = LITE_MESSAGE.search(str(answer))
+                return code + u" - " + (message.group(1).decode("utf8") if message else u"нет ответа")
+        except Exception:
+            return u"нет ответа"
 
     def _handle_code(self, code):
         if not self.dr_code.match(code):
@@ -400,23 +266,14 @@ class DozoR(object):
             code = self.prefix + code
         return self._send_code(code)
 
-    def code(self, message):
-        if self.enabled:
-            if message['text'].count(",") == 1:
-                try:
-                    result = self.gps(message['text'])
-                    if result:
-                        return result
-                except Exception:
-                    pass
+    def handle_text(self, text):
+        if not self.enabled:
+            return
 
-            codes = message['text'].split()
-            if len(codes) < 1:
-                return None
-            if self.dr_code.match(codes[0]):
-                result = filter(None, map(self._handle_code, codes))
-                if len(result):
-                    return u"\n".join(result)
-
-        if u"привет" in message['text'].lower() and u"бот" in message['text'].lower():
-            return u"Привет!"
+        codes = text.split()
+        if len(codes) < 1:
+            return None
+        if self.dr_code.match(codes[0]):
+            result = filter(None, map(self._handle_code, codes))
+            if len(result):
+                return u"\n".join(result)

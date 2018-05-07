@@ -446,14 +446,14 @@ class TestBot(TestCase):
 
 class TestCodeParsing(TestCase):
     def setUp(self):
-        self.d = DozoR({'id': 1, 'username': 'm_messiah'})
+        self.d = DozoR(1)
         self.d.enabled = True
 
 
 def generator_codes(prefix, code):
     def test(self):
         self.d.prefix = prefix
-        result = self.d.code({'text': code})
+        result = self.d.handle_text(code)
         self.assertIn(u"войти в движок", result)
     return test
 

@@ -6,6 +6,7 @@ from message import Message
 
 __author__ = 'm_messiah'
 
+CREDENTIALS = {}
 SESSIONS = {}
 
 
@@ -33,7 +34,7 @@ class MainPage(webapp2.RequestHandler):
     def _inline_query(self, query):
         return self._answer({
             'method': 'answerInlineQuery',
-            'inline_query_id': inline_query['id'],
+            'inline_query_id': query['id'],
             'cache_time': 60,
             'results': json.encode([{
                 'type': 'article',
