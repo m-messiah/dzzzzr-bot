@@ -2,7 +2,7 @@ sudo: false
 language: python
 env:
   global:
-    - CC_TEST_REPORTER_ID=d35122abc4c4823a07be182befb3b934f0c1a747
+    - CC_TEST_REPORTER_ID=1e61e77fd3cce02d7d2310a0954387614d88ed742b24e392c725c048f9b4febe
 python:
   - '2.7'
 before_install:  
