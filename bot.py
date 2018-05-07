@@ -139,19 +139,12 @@ class Bot(object):
             command = command[:command.find(self.name)]
         if "@" in command:
             return None
-        if command == "/set_dzzzr":
-            try:
-                return self.dozor.set_dzzzr(arguments)
-            except Exception as e:
-                return "Incorrect format (%s)" % e
-        else:
-            try:
-                return getattr(self, command[1:], getattr(self.dozor, command[1:], self.not_found))(arguments)
-            except UnicodeEncodeError as e:
-                return self.not_found(None)
-            except Exception as e:
-                logging.error(e)
-                return None
+        try:
+            return getattr(self, command[1:], getattr(self.dozor, command[1:], self.not_found))(arguments)
+        except UnicodeEncodeError as e:
+            return self.not_found(None)
+        except Exception as e:
+            logging.error(e)
 
     def handle_text(self, message):
         text = message['text']

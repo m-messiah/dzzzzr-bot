@@ -86,38 +86,45 @@ class DozoR(object):
         except Exception:
             raise Exception(u"Нет ответа. Проверьте вручную.")
 
+    def _handle_set_dzzzr_arguments(self, arguments):
+        arguments = arguments.split()
+        if len(arguments) > 4:
+            self.url, captain, pin, login, password = arguments[:5]
+        else:
+            raise ValueError
+
+        if len(arguments) > 5:
+            if "[" not in arguments[5]:
+                self.prefix = arguments[5].upper()
+            else:
+                self.dr_code = re_compile(ur"^%s$" % arguments[5])
+        else:
+            self.prefix = ""
+        if len(arguments) > 6:
+            self.dr_code = re_compile(ur"^%s$" % arguments[6])
+
+        return captain, pin, login, password
+
     def set_dzzzr(self, arguments):
         try:
-            arguments = arguments.split()
-            if len(arguments) > 4:
-                self.url, captain, pin, login, password = arguments[:5]
-            else:
-                raise ValueError
-
-            if len(arguments) > 5:
-                if "[" not in arguments[5]:
-                    self.prefix = arguments[5].upper()
-                else:
-                    self.dr_code = re_compile(ur"^%s$" % arguments[5])
-            else:
-                self.prefix = ""
-            if len(arguments) > 6:
-                self.dr_code = re_compile(ur"^%s$" % arguments[6])
-
-        except ValueError:
+            captain, pin, login, password = self._handle_set_dzzzr_arguments(arguments)
+        except Exception:
             return (
                 u"Использование:\n"
-                u"/set_dzzzr url captain pin login password [prefix] [regexp]")
-        else:
-            merged = "|".join((self.url, captain, login))
-            if merged in main.CREDENTIALS and self.chat_id != main.CREDENTIALS[merged]:
-                return (u"Бот уже используется этой командой. В чате %s\n"
-                        u"Сначала остановите его. (/stop)\n" % main.SESSIONS[main.CREDENTIALS[merged]].title)
-            self.browser.headers.update({
-                'referer': self.url,
-                'User-Agent': "Mozilla/5.0 " + choice(USERAGENTS)
-            })
-            self.browser.auth = (captain, pin)
+                u"/set_dzzzr url captain pin login password [prefix] [regexp]"
+            )
+
+        merged = "|".join((self.url, captain, login))
+        if merged in main.CREDENTIALS and self.chat_id != main.CREDENTIALS[merged]:
+            return (u"Бот уже используется этой командой. В чате %s\n"
+                    u"Сначала остановите его. (/stop)\n" % main.SESSIONS[main.CREDENTIALS[merged]].title)
+
+        self.browser.headers.update({
+            'referer': self.url,
+            'User-Agent': "Mozilla/5.0 " + choice(USERAGENTS)
+        })
+        self.browser.auth = (captain, pin)
+        try:
             login_page = self.browser.post(
                 self.url,
                 data={
@@ -128,22 +135,29 @@ class DozoR(object):
                 },
                 stream=True
             )
-            if login_page.status_code != 200:
-                return u"Авторизация не удалась"
-            else:
+        except Exception as e:
+            return "Incorrect format (%s)" % e
+
+        if login_page.status_code != 200:
+            return u"Авторизация не удалась"
+        else:
+            try:
                 answer = decode_page(login_page)
                 message = answer.find(class_="sysmsg")
                 if message and message.get_text():
                     message = message.get_text()
                 else:
                     message = u"Авторизация не удалась"
-                if u"Авторизация пройдена успешно" not in message:
-                    return message
-                self.enabled = True
-                self.classic = True
-                self.credentials = "|".join((self.url, captain, login))
-                main.CREDENTIALS[self.credentials] = self.chat_id
-                return u"Добро пожаловать, %s" % login
+            except Exception as e:
+                return "Incorrect page (%s)" % e
+
+            if u"Авторизация пройдена успешно" not in message:
+                return message
+            self.enabled = True
+            self.classic = True
+            self.credentials = "|".join((self.url, captain, login))
+            main.CREDENTIALS[self.credentials] = self.chat_id
+            return u"Добро пожаловать, %s" % login
 
     def set_lite(self, arguments):
         try:
@@ -207,6 +221,25 @@ class DozoR(object):
         except Exception as e:
             return None, unicode(e.message)
 
+    def _parse_sector(self, sector):
+        if not sector:
+            return
+        try:
+            sector_name, _, codes = sector.partition(u":")
+            _, __, codes = codes.partition(u":")
+            if not codes:
+                return
+            codes = codes.strip().split(u", ")
+            codes = [c for c in enumerate(codes, start=1) if u"span" not in c[1]]
+            return (
+                u"%s (осталось %s): %s" % (
+                    sector_name,
+                    len(codes),
+                    u", ".join(u"%s (%s)" % t for t in codes)
+                ))
+        except Exception:
+            pass
+
     def codes(self, _):
         answer, message = self._get_dzzzr_answer()
         if message:
@@ -215,27 +248,29 @@ class DozoR(object):
             message = answer.find("strong", string=re_compile(u"Коды сложности")).parent
         except Exception:
             return u"Коды сложности не найдены"
+        if not message:
+            return u"Нет ответа"
+
+        message = unicode(message).split(u"Коды сложности")[1]
+        sectors = re_split("<br/?>", message)[:-1]
+        result = filter(None, map(self._parse_sector, sectors))
+        return u"\n".join(result)
+
+    def _classic_result(self, code, answer):
+        message = answer.find(class_="sysmsg")
+        if message and message.get_text():
+            message_answer = message.get_text()
+        else:
+            message_answer = u"нет ответа"
+        return code + " - " + message_answer
+
+    def _lite_result(self, code, answer):
+        message = LITE_MESSAGE.search(str(answer))
         if message:
-            message = unicode(message).split(u"Коды сложности")[1]
-            sectors = re_split("<br/?>", message)[:-1]
-            result = []
-            for sector in filter(len, sectors):
-                try:
-                    sector_name, _, codes = sector.partition(u":")
-                    _, __, codes = codes.partition(u":")
-                    if not codes:
-                        continue
-                    codes = filter(lambda c: u"span" not in c[1], enumerate(codes.strip().split(u", "), start=1))
-                    result.append(
-                        u"%s (осталось %s): %s" % (
-                            sector_name,
-                            len(codes),
-                            u", ".join(map(lambda t: u"%s (%s)" % (t[0], t[1]), codes))
-                        ))
-                except Exception:
-                    pass
-            return u"\n".join(result)
-        return u"Нет ответа"
+            message_answer = message.group(1).decode("utf8")
+        else:
+            message_answer = u"нет ответа"
+        return code + u" - " + message_answer
 
     def _send_code(self, code):
         if self.url == "":
@@ -246,11 +281,9 @@ class DozoR(object):
             return e.message
         try:
             if self.classic:
-                message = answer.find(class_="sysmsg")
-                return code + " - " + (message.get_text() if message and message.get_text() else u"нет ответа.")
+                return self._classic_result(code, answer)
             else:
-                message = LITE_MESSAGE.search(str(answer))
-                return code + u" - " + (message.group(1).decode("utf8") if message else u"нет ответа")
+                return self._lite_result(code, answer)
         except Exception:
             return u"нет ответа"
 
@@ -273,7 +306,7 @@ class DozoR(object):
         codes = text.split()
         if len(codes) < 1:
             return None
-        if self.dr_code.match(codes[0]):
-            result = filter(None, map(self._handle_code, codes))
-            if len(result):
-                return u"\n".join(result)
+
+        result = filter(None, map(self._handle_code, codes))
+        if result:
+            return u"\n".join(result)
