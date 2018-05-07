@@ -374,15 +374,6 @@ class DozoR(object):
                 logging.error(e)
                 return None
 
-    def handle(self, message):
-        try:
-            if message['text'][0] == '/':
-                return self.handle_command(message['text'])
-            else:
-                return self.code(message)
-        except Exception:
-            return None
-
     def _send_code(self, code):
         if self.url == "":
             return code + u" - сначала надо войти в движок"

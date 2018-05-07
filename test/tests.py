@@ -2,7 +2,8 @@
 from unittest import TestCase
 import sys
 import os.path
-from main import app, DozoR, SESSIONS
+from main import app, SESSIONS
+from dozor import DozoR
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lib'))
 # mac os
 google_cloud_sdk_path = '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/platform/google_appengine'
