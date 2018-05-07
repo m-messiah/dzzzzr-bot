@@ -10,7 +10,7 @@ sys.path.insert(1, 'google_appengine')
 sys.path.insert(1, 'google_appengine/lib/yaml/lib')
 CWD = os.path.dirname(__file__)
 sys.path.insert(1, os.path.join(CWD, '../lib'))
-import webapp2
+import webapp2  # noqa E402
 
 
 class Lite(webapp2.RequestHandler):

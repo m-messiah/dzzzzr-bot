@@ -52,20 +52,20 @@ class DozoR(object):
         self.dr_code = re_compile(ur"^[0-9dDдДrRlLzZрРлЛ]+$")
 
     def get_dzzzr(self, code=None):
-        if code:
-            answer = self.browser.post(
-                self.url,
-                data={
-                    'action': "entcod",
-                    'cod': code.encode("cp1251")
-                },
-                stream=True
-            )
-        else:
-            answer = self.browser.get(self.url, stream=True)
-        if not answer:
-            raise Exception(u"Нет ответа. Проверьте вручную.")
         try:
+            if code:
+                answer = self.browser.post(
+                    self.url,
+                    data={
+                        'action': "entcod",
+                        'cod': code.encode("cp1251")
+                    },
+                    stream=True
+                )
+            else:
+                answer = self.browser.get(self.url, stream=True)
+            if not answer:
+                raise Exception()
             return decode_page(answer)
         except Exception:
             raise Exception(u"Нет ответа. Проверьте вручную.")
@@ -455,7 +455,7 @@ class MainPage(webapp2.RequestHandler):
         if 'message' not in update and 'edited_message' not in update:
             if 'inline_query' in update:
                 self.response.headers['Content-Type'] = 'application/json'
-                self.response.write(json.encode({
+                return self.response.write(json.encode({
                     'method': 'answerInlineQuery',
                     'inline_query_id': update['inline_query']['id'],
                     'cache_time': 60,
@@ -514,4 +514,4 @@ class MainPage(webapp2.RequestHandler):
 app = webapp2.WSGIApplication([('/', MainPage)])
 
 if __name__ == '__main__':
-    app.run()
+    app.run()  # noqa

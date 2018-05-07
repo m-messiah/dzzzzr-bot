@@ -3,6 +3,9 @@ from unittest import TestCase
 import sys
 import time
 import os.path
+from multiprocessing import Process
+from test_classic_engine import app as dr_engine
+from main import app, SESSIONS
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lib'))
 # mac os
 google_cloud_sdk_path = '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/platform/google_appengine'
@@ -11,12 +14,9 @@ sys.path.insert(0, google_cloud_sdk_path)
 # travis
 sys.path.insert(1, 'google_appengine')
 sys.path.insert(1, 'google_appengine/lib/yaml/lib')
-import webapp2
-from webapp2_extras import json
-from multiprocessing import Process
-from paste import httpserver
-from test_classic_engine import app as dr_engine
-from main import app, SESSIONS
+import webapp2  # noqa E402
+from webapp2_extras import json  # noqa E402
+from paste import httpserver  # noqa E402
 
 
 class TestClassic(TestCase):
@@ -32,9 +32,9 @@ class TestClassic(TestCase):
         time.sleep(1)
 
     def auth(self):
-        self.send_message("/set_dzzzr http://127.0.0.1:5000/ spb_Captain 123456 bot botpassword")
+        self.send_message("/set_dzzzr http://localhost:5000/ spb_Captain 123456 bot botpassword")
 
-    def send_message(self, text):
+    def send_message(self, text, chat_id=1, empty=False):
         request = webapp2.Request.blank("/")
         request.method = "POST"
         request.headers["Content-Type"] = "application/json"
@@ -52,7 +52,7 @@ class TestClassic(TestCase):
                 u'message_id': 1,
                 u'chat': {
                     u'type': u'user',
-                    u'id': 1,
+                    u'id': chat_id,
                     u'username': u'm_messiah',
                     u'first_name': u'Maxim',
                     u'last_name': u'Muzafarov',
@@ -63,12 +63,20 @@ class TestClassic(TestCase):
         self.assertEqual(response.status_int, 200)
         self.assertIn("application/json", response.headers['Content-Type'])
         response = json.decode(response.body)
+        if empty:
+            self.assertDictEqual(response, {})
+            return {}
+
         self.assertIn('text', response)
         return response['text']
 
     def test_set_dzzzr_small_arguments(self):
         response = self.send_message("/set_dzzzr http://localhost:5000/ spb_Captain 123456 bot")
         self.assertIn("/set_dzzzr", response, "Accept not enough arguments")
+
+    def test_set_dzzzr_broken_arguments(self):
+        response = self.send_message("/set_dzzzr htt://localhost:5000/ spb_Captain 123456 bot botpassword")
+        self.assertIn("Incorrect format", response)
 
     def test_set_dzzzr(self):
         response = self.send_message("/set_dzzzr http://localhost:5000/ spb_Captain 123456 bot botpassword 1D")
@@ -86,10 +94,31 @@ class TestClassic(TestCase):
         self.assertEqual(True, bool(SESSIONS[1].dr_code.search("fb")))
         self.assertEqual(True, bool(SESSIONS[1].dr_code.match("1f23b4")))
 
+    def test_set_dzzzr_separate_chats(self):
+        self.auth()
+        response = self.send_message("/set_dzzzr http://localhost:5000/ spb_Captain 123456 bot botpassword", chat_id=2)
+        self.assertNotIn("/set_dzzzr", response)
+        self.assertIn("/stop", response)
+
+    def test_set_dzzzr_bad_password(self):
+        response = self.send_message("/set_dzzzr http://localhost:5000/ spb_Captain 123456 bot wrongpassword")
+        self.assertIn(u"Авторизация не удалась", response)
+
     def test_code(self):
         self.auth()
         self.assertIn(u"Код принят", self.send_message(u"1d23r4"))
         self.assertIn(u"Код не принят", self.send_message(u"2d23r4"))
+
+    def test_pause(self):
+        self.auth()
+        self.assertIn(u"/resume", self.send_message(u"/pause"))
+        self.send_message(u"1d23r4", empty=True)
+
+    def test_broken_engine(self):
+        self.auth()
+        self.engine.terminate()
+        response = self.send_message(u"/codes")
+        self.assertIn(u"Нет ответа", response)
 
     def test_remain_codes(self):
         self.auth()
@@ -98,8 +127,22 @@ class TestClassic(TestCase):
         self.assertIn(u"Сектор 1 (осталось 7): 12 (1), 16 (1), 17 (1+), 18 (1), 22 (1), 23 (1+), 24 (1)", response)
         self.assertIn(u"Сектор 2 (осталось 0)", response)
 
+    def test_codes_no_auth(self):
+        response = self.send_message(u"/codes")
+        self.assertIn(u"Сначала надо войти в движок", response)
+
     def test_time(self):
         self.auth()
         response = self.send_message(u"/time")
         self.assertNotIn(u"/help", response)
         self.assertIn("00:29:23", response)
+
+    def test_time_no_auth(self):
+        response = self.send_message(u"/time")
+        self.assertIn(u"Сначала надо войти в движок", response)
+
+    def test_time_bad_engine(self):
+        self.auth()
+        self.engine.terminate()
+        response = self.send_message(u"/time")
+        self.assertIn(u"Нет ответа", response)

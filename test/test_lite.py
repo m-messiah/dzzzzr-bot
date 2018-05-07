@@ -3,6 +3,9 @@ from unittest import TestCase
 import sys
 import time
 import os.path
+from multiprocessing import Process
+from test_lite_engine import app as lite_engine
+from main import app, SESSIONS
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lib'))
 # mac os
 google_cloud_sdk_path = '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/platform/google_appengine'
@@ -11,12 +14,9 @@ sys.path.insert(0, google_cloud_sdk_path)
 # travis
 sys.path.insert(1, 'google_appengine')
 sys.path.insert(1, 'google_appengine/lib/yaml/lib')
-import webapp2
-from webapp2_extras import json
-from multiprocessing import Process
-from paste import httpserver
-from test_lite_engine import app as lite_engine
-from main import app, SESSIONS
+import webapp2  # noqa E402
+from webapp2_extras import json  # noqa E402
+from paste import httpserver  # noqa E402
 
 
 class TestLite(TestCase):
