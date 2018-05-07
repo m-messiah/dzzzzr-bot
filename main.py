@@ -343,33 +343,34 @@ class DozoR(object):
             return u"\n".join(result)
         return u"Нет ответа"
 
-    def handle(self, message):
-        if message['text'][0] == '/':
-            command, _, arguments = message['text'].partition(" ")
-            if self.name in command:
-                command = command[:command.find("@DzzzzR_bot")]
-            if "@" in command:
-                return None
-            if command == "/set_dzzzr":
-                try:
-                    return self.set_dzzzr(arguments)
-                except Exception as e:
-                    return "Incorrect format (%s)" % e
-            else:
-                try:
-                    return getattr(self, command[1:], self.not_found)(arguments)
-                except UnicodeEncodeError as e:
-                    return self.not_found(None)
-                except Exception as e:
-                    logging.error(e)
-                    return None
+    def handle_command(self, text):
+        command, _, arguments = text.partition(" ")
+        if self.name in command:
+            command = command[:command.find("@DzzzzR_bot")]
+        if "@" in command:
+            return None
+        if command == "/set_dzzzr":
+            try:
+                return self.set_dzzzr(arguments)
+            except Exception as e:
+                return "Incorrect format (%s)" % e
         else:
             try:
-                response = self.code(message)
-                if response:
-                    return response
-            except Exception:
-                pass
+                return getattr(self, command[1:], self.not_found)(arguments)
+            except UnicodeEncodeError as e:
+                return self.not_found(None)
+            except Exception as e:
+                logging.error(e)
+                return None
+
+    def handle(self, message):
+        try:
+            if message['text'][0] == '/':
+                return self.handle_command(message['text'])
+            else:
+                return self.code(message)
+        except Exception:
+            return None
 
     def code(self, message):
         def send(browser, url, code):
@@ -398,17 +399,19 @@ class DozoR(object):
             result = []
             if len(codes) < 1:
                 return None
-            if self.dr_code.match(codes[0]):
-                for code in codes:
-                    if self.dr_code.match(code):
-                        code = code.upper()
-                        if self.dr_code.search(u"D"):
-                            code = code.translate({ord(u'Д'): u'D',
-                                                   ord(u'Р'): u'R',
-                                                   ord(u'Л'): u'L'})
-                        if self.prefix and self.prefix not in code:
-                            code = self.prefix + code
-                    result.append(send(self.browser, self.url, code))
+            if not self.dr_code.match(codes[0]):
+                return None
+            for code in codes:
+                if not self.dr_code.match(code):
+                    continue
+                code = code.upper()
+                if self.dr_code.search(u"D"):
+                    code = code.translate({ord(u'Д'): u'D',
+                                           ord(u'Р'): u'R',
+                                           ord(u'Л'): u'L'})
+                if self.prefix and self.prefix not in code:
+                    code = self.prefix + code
+                result.append(send(self.browser, self.url, code))
             if len(result):
                 return u"\n".join(result)
 

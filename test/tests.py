@@ -167,7 +167,6 @@ class TestApp(TestCase):
         self.assertEqual('answerInlineQuery', response['method'])
         self.assertIn('Inline mode not implemented', response['results'])
 
-
     def test_json_empty(self):
         request = webapp2.Request.blank("/")
         request.method = "POST"
@@ -343,8 +342,6 @@ class TestBot(TestCase):
 
         self.assertIn('text', response)
         return response['text']
-
-
 
     def send_gps(self, gps, error=False, empty=False):
         request = webapp2.Request.blank("/")
