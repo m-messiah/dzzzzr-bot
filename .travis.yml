@@ -1,20 +1,28 @@
 sudo: false
 language: python
+env:
+  global:
+    - CC_TEST_REPORTER_ID=d35122abc4c4823a07be182befb3b934f0c1a747
 python:
-- '2.7'
+  - '2.7'
 before_install:  
-- wget https://storage.googleapis.com/appengine-sdks/featured/google_appengine_1.9.67.zip -nv
-- unzip -q google_appengine_1.9.67.zip
-- openssl aes-256-cbc -K $encrypted_ad8499d072ee_key -iv $encrypted_ad8499d072ee_iv -in client_secret.json.enc -out client_secret.json -d
+  - wget https://storage.googleapis.com/appengine-sdks/featured/google_appengine_1.9.67.zip -nv
+  - unzip -q google_appengine_1.9.67.zip
+  - openssl aes-256-cbc -K $encrypted_ad8499d072ee_key -iv $encrypted_ad8499d072ee_iv -in client_secret.json.enc -out client_secret.json -d
 install:
-- pip install Paste
-- pip install flake8
-- pip install -r requirements.txt -t lib
+  - pip install -r requirements.txt -t lib
+before_script:
+  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+  - chmod +x ./cc-test-reporter
+  - ./cc-test-reporter before-build
+  - pip install flake8 coverage Paste
 script:
-- flake8 --exclude lib --ignore E402
-- nosetests test
+  - flake8
+  - nosetests test --with-coverage --cover-package=main --cover-xml
+after_script:
+  - if [[ "$TRAVIS_PULL_REQUEST" == "false" ]]; then ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT; fi
 before_deploy:
-- rm -rf google_appengine_1.9.67.zip google_appengine .git
+  - rm -rf google_appengine_1.9.67.zip google_appengine .git ./cc-test-reporter
 deploy:
   provider: gae
   skip_cleanup: true
