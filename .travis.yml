@@ -19,7 +19,6 @@ before_script:
 script:
   - flake8
   - nosetests test --with-coverage --cover-package=main --cover-xml
-after_script:
   - if [[ "$TRAVIS_PULL_REQUEST" == "false" ]]; then ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT; fi
 before_deploy:
   - rm -rf google_appengine_1.9.67.zip google_appengine .git ./cc-test-reporter
