@@ -13,7 +13,6 @@ from useragents import USERAGENTS
 __author__ = 'm_messiah'
 
 CODE_RANKS = re_compile(u"Коды сложности")
-TIME_ON = re_compile(u"Время на уровне:")
 
 
 class DozoR(object):
@@ -59,9 +58,6 @@ class DozoR(object):
 
     def _handle_set_dzzzr_arguments(self, arguments):
         arguments = arguments.split()
-        if len(arguments) < 5:
-            raise ValueError
-
         self.url = arguments[0]
         self.prefix = ""
         if len(arguments) > 5:
@@ -148,7 +144,7 @@ class DozoR(object):
             return messages.DOZOR_AUTH_FAILED
 
         answer = utils.decode_page(login_page)
-        message = LITE_MESSAGE.search(str(answer))
+        message = utils.LITE_MESSAGE.search(str(answer))
         if not message:  # no cover until mocked tests
             return messages.DOZOR_AUTH_FAILED
 

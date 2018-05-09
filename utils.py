@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 import main
 import messages
 
+TIME_ON = re_compile(u"Время на уровне:")
 LITE_MESSAGE = re_compile(ur'<!--errorText--><p><strong>(.*?)</strong></p><!--errorTextEnd-->')
 LITE_TIME_ON = re_compile(ur'<!--timeOnLevelBegin (\d*?) timeOnLevelEnd-->')
 LITE_TIME_TO = re_compile(ur'<!--timeToFinishBegin (\d*?) timeToFinishEnd-->')
@@ -29,10 +30,12 @@ def get_dup_session(chat_id, merged_credentials):
     if merged_credentials in main.CREDENTIALS and chat_id != main.CREDENTIALS[merged_credentials]:
         return messages.DOZOR_DUPLICATE_TEMPL % main.SESSIONS[main.CREDENTIALS[merged_credentials]].title
 
+
 def parse_classic_time(answer):
     message = answer.find("p", string=TIME_ON)
     if message and message.get_text():
         return u" ".join(message.get_text().split()[:4])
+
 
 def parse_lite_time(answer):
     on_level = LITE_TIME_ON.search(str(answer))
@@ -43,10 +46,12 @@ def parse_lite_time(answer):
             to_minutes(int(to_finish.group(1))),
         )
 
+
 def parse_time(answer, is_classic=True):
-    is is_classic:
+    if is_classic:
         return parse_classic_time(answer)
     return parse_lite_time(answer)
+
 
 def parse_classic_result(code, answer):
     message = answer.find(class_="sysmsg")
@@ -56,6 +61,7 @@ def parse_classic_result(code, answer):
         message_answer = messages.DOZOR_NO_ANSWER  # no cover until mocked tests
     return code + " - " + message_answer
 
+
 def parse_lite_result(code, answer):
     message = LITE_MESSAGE.search(str(answer))
     if message:
@@ -63,6 +69,7 @@ def parse_lite_result(code, answer):
     else:
         message_answer = messages.DOZOR_NO_ANSWER  # no cover until mocked tests
     return code + u" - " + message_answer
+
 
 def parse_code_result(code, answer, is_classic=True):
     if is_classic:
