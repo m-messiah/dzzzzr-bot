@@ -17,10 +17,13 @@ class MainPage(webapp2.RequestHandler):
 
     def _get_update(self):
         if 'Content-Type' not in self.request.headers:
-            raise Exception("Bad headers")
+            return {}
         if 'application/json' not in self.request.headers['Content-Type']:
-            raise Exception("Bad Content-Type")
-        return json.decode(self.request.body)
+            return {}
+        try:
+            return json.decode(self.request.body)
+        except Exception:
+            return {}
 
     def _answer(self, response):
         self.response.headers['Content-Type'] = 'application/json'
@@ -43,22 +46,22 @@ class MainPage(webapp2.RequestHandler):
             }])
         })
 
-    def post(self):
-        try:
-            update = self._get_update()
-        except Exception:
-            return self._show_error()
+    def _get_message(self, update):
+        if 'message' in update:
+            return Message(update['message'])
+        elif 'edited_message' in update:
+            return Message(update['edited_message'])
 
+    def post(self):
+        update = self._get_update()
         if 'inline_query' in update:
             return self._inline_query(update['inline_query'])
-        elif 'message' in update:
-            message = Message(update['message'])
-        elif 'edited_message' in update:
-            message = Message(update['edited_message'])
-        else:
-            return self._show_error()
 
-        self._answer(message.handle() or {})
+        message = self._get_message(update)
+        if message:
+            return self._answer(message.handle() or {})
+
+        return self._show_error()
 
 
 app = webapp2.WSGIApplication([('/', MainPage)])

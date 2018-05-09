@@ -71,6 +71,9 @@ class DozoR(object):
         except Exception:
             raise Exception(messages.DOZOR_NO_ANSWER)
 
+    def set_dr_code(self, pattern):
+        self.dr_code = re_compile(ur"^%s$" % pattern)
+
     def _handle_set_dzzzr_arguments(self, arguments):
         arguments = arguments.split()
         if len(arguments) < 5:
@@ -79,13 +82,13 @@ class DozoR(object):
         self.url = arguments[0]
         self.prefix = ""
         if len(arguments) > 5:
-            if "[" not in arguments[5]:
-                self.prefix = arguments[5].upper()
+            if "[" in arguments[5]:
+                self.set_dr_code(arguments[5])
             else:
-                self.dr_code = re_compile(ur"^%s$" % arguments[5])
+                self.prefix = arguments[5].upper()
 
         if len(arguments) > 6:
-            self.dr_code = re_compile(ur"^%s$" % arguments[6])
+            self.set_dr_code(arguments[6])
         return dict(zip(('captain', 'pin', 'login', 'password'), arguments[1:5]))
 
     def _get_dup_session(self, merged_credentials):
@@ -176,25 +179,27 @@ class DozoR(object):
         main.CREDENTIALS[self.credentials] = self.chat_id
         return message.group(1)
 
+    def _parse_classic_time(self, answer):
+        message = answer.find("p", string=TIME_ON)
+        if message and message.get_text():
+            return u" ".join(message.get_text().split()[:4])
+
+    def _parse_lite_time(self, answer):
+        on_level = LITE_TIME_ON.search(str(answer))
+        to_finish = LITE_TIME_TO.search(str(answer))
+        if on_level and to_finish:
+            return messages.DOZOR_TIME_ON_TEMPL % (
+                to_minutes(int(on_level.group(1))),
+                to_minutes(int(to_finish.group(1))),
+            )
+
     def time(self, _):
         answer, message = self._get_dzzzr_answer()
         if message:
             return message
 
-        if self.classic:
-            message = answer.find("p", string=TIME_ON)
-            if message and message.get_text():
-                return u" ".join(message.get_text().split()[:4])
-        else:
-            on_level = LITE_TIME_ON.search(str(answer))
-            to_finish = LITE_TIME_TO.search(str(answer))
-            if on_level and to_finish:
-                return messages.DOZOR_TIME_ON_TEMPL % (
-                    to_minutes(int(on_level.group(1))),
-                    to_minutes(int(to_finish.group(1))),
-                )
-
-        return messages.DOZOR_NO_ANSWER  # no cover until mocked tests
+        parser = self._parse_classic_time if self.classic else self._parse_lite_time
+        return parser(answer) or messages.DOZOR_NO_ANSWER
 
     def _get_dzzzr_answer(self):
         try:
@@ -262,10 +267,10 @@ class DozoR(object):
             answer = self.get_dzzzr(code=code)
         except Exception as e:  # no cover until mocked tests
             return e.message
+
+        result_handler = self._classic_result if self.classic else self._lite_result
         try:
-            if self.classic:
-                return self._classic_result(code, answer)
-            return self._lite_result(code, answer)
+            return result_handler(code, answer)
         except Exception:  # no cover until mocked tests
             return messages.DOZOR_NO_ANSWER
 
