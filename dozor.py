@@ -88,9 +88,7 @@ class DozoR(object):
 
     def _handle_set_dzzzr_arguments(self, arguments):
         arguments = arguments.split()
-        if len(arguments) > 4:
-            self.url, captain, pin, login, password = arguments[:5]
-        else:
+        if len(arguments) < 5:
             raise ValueError
 
         if len(arguments) > 5:
@@ -102,23 +100,16 @@ class DozoR(object):
             self.prefix = ""
         if len(arguments) > 6:
             self.dr_code = re_compile(ur"^%s$" % arguments[6])
+        self.url = arguments[0]
+        return arguments[1:5]
 
-        return captain, pin, login, password
-
-    def set_dzzzr(self, arguments):
-        try:
-            captain, pin, login, password = self._handle_set_dzzzr_arguments(arguments)
-        except Exception:
-            return (
-                u"Использование:\n"
-                u"/set_dzzzr url captain pin login password [prefix] [regexp]"
-            )
-
+    def _get_dup_session(self, captain, login):
         merged = "|".join((self.url, captain, login))
         if merged in main.CREDENTIALS and self.chat_id != main.CREDENTIALS[merged]:
             return (u"Бот уже используется этой командой. В чате %s\n"
                     u"Сначала остановите его. (/stop)\n" % main.SESSIONS[main.CREDENTIALS[merged]].title)
 
+    def _send_dzzzr_auth(self, captain, pin, login, password):
         self.browser.headers.update({
             'referer': self.url,
             'User-Agent': "Mozilla/5.0 " + choice(USERAGENTS)
@@ -136,28 +127,49 @@ class DozoR(object):
                 stream=True
             )
         except Exception as e:
-            return "Incorrect format (%s)" % e
+            return False, "Incorrect format (%s)" % e
 
         if login_page.status_code != 200:
-            return u"Авторизация не удалась"
-        else:
-            try:
-                answer = decode_page(login_page)
-                message = answer.find(class_="sysmsg")
-                if message and message.get_text():
-                    message = message.get_text()
-                else:
-                    message = u"Авторизация не удалась"
-            except Exception as e:
-                return "Incorrect page (%s)" % e
+            return False, u"Авторизация не удалась"
 
-            if u"Авторизация пройдена успешно" not in message:
-                return message
-            self.enabled = True
-            self.classic = True
-            self.credentials = "|".join((self.url, captain, login))
-            main.CREDENTIALS[self.credentials] = self.chat_id
-            return u"Добро пожаловать, %s" % login
+        return True, login_page
+
+    def _dzzzr_auth(self, captain, pin, login, password):
+        is_authenticated, login_page = self._send_dzzzr_auth(captain, pin, login, password)
+        if not is_authenticated:
+            return False, login_page
+        try:
+            answer = decode_page(login_page)
+            message = answer.find(class_="sysmsg")
+            if not (message and message.get_text()):
+                return False, u"Авторизация не удалась"
+            message = message.get_text()
+            return u"Авторизация пройдена успешно" in message, message
+        except Exception as e:
+            return False, "Incorrect page (%s)" % e
+
+    def set_dzzzr(self, arguments):
+        try:
+            captain, pin, login, password = self._handle_set_dzzzr_arguments(arguments)
+        except Exception:
+            return (
+                u"Использование:\n"
+                u"/set_dzzzr url captain pin login password [prefix] [regexp]"
+            )
+
+        dup_message = self._get_dup_session(captain, login)
+        if dup_message:
+            return dup_message
+
+        is_authenticated, message = self._dzzzr_auth(captain, pin, login, password)
+        if not is_authenticated:
+            return message
+
+        self.enabled = True
+        self.classic = True
+        self.credentials = "|".join((self.url, captain, login))
+        main.CREDENTIALS[self.credentials] = self.chat_id
+        return u"Добро пожаловать, %s" % login
 
     def set_lite(self, arguments):
         try:
