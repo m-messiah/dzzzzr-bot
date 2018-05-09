@@ -68,7 +68,10 @@ class DozoR(object):
 
         if len(arguments) > 6:
             self.set_dr_code(arguments[6])
-        return dict(zip(('captain', 'pin', 'login', 'password'), arguments[1:5]))
+
+        user_credentials = dict(zip(('captain', 'pin', 'login', 'password'), arguments[1:5]))
+        assert len(user_credentials) == 4
+        return user_credentials
 
     def _update_headers(self):
         self.browser.headers.update({
