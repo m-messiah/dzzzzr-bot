@@ -2,13 +2,12 @@
 from random import choice
 from re import compile as re_compile
 from re import split as re_split
-from zlib import MAX_WBITS, decompress
 
-from bs4 import BeautifulSoup
 from requests import Session
 
 import main
 import messages
+import utils
 from useragents import USERAGENTS
 
 __author__ = 'm_messiah'
@@ -18,19 +17,6 @@ TIME_ON = re_compile(u"Время на уровне:")
 LITE_MESSAGE = re_compile(ur'<!--errorText--><p><strong>(.*?)</strong></p><!--errorTextEnd-->')
 LITE_TIME_ON = re_compile(ur'<!--timeOnLevelBegin (\d*?) timeOnLevelEnd-->')
 LITE_TIME_TO = re_compile(ur'<!--timeToFinishBegin (\d*?) timeToFinishEnd-->')
-
-
-def to_minutes(sec):
-    return u"%s:%s" % (sec / 60, sec % 60)
-
-
-def decode_page(page):
-    page_content = page.raw.read()
-    try:
-        content = decompress(page_content, 16 + MAX_WBITS)
-    except Exception:
-        content = page_content
-    return BeautifulSoup(content, 'html.parser', from_encoding="windows-1251")
 
 
 class DozoR(object):
@@ -67,7 +53,7 @@ class DozoR(object):
                 answer = self.browser.get(self.url, stream=True)
             if not answer:  # no cover until mocked tests
                 raise Exception()
-            return decode_page(answer)
+            return utils.decode_page(answer)
         except Exception:
             raise Exception(messages.DOZOR_NO_ANSWER)
 
@@ -90,10 +76,6 @@ class DozoR(object):
         if len(arguments) > 6:
             self.set_dr_code(arguments[6])
         return dict(zip(('captain', 'pin', 'login', 'password'), arguments[1:5]))
-
-    def _get_dup_session(self, merged_credentials):
-        if merged_credentials in main.CREDENTIALS and self.chat_id != main.CREDENTIALS[merged_credentials]:
-            return messages.DOZOR_DUPLICATE_TEMPL % main.SESSIONS[main.CREDENTIALS[merged_credentials]].title
 
     def _update_headers(self):
         self.browser.headers.update({
@@ -128,7 +110,7 @@ class DozoR(object):
         if not is_authenticated:
             return False, login_page
         try:
-            answer = decode_page(login_page)
+            answer = utils.decode_page(login_page)
             message = answer.find(class_="sysmsg")
             if not (message and message.get_text()):  # no cover until mocked tests
                 return False, messages.DOZOR_AUTH_FAILED
@@ -144,7 +126,7 @@ class DozoR(object):
             return messages.DOZOR_SET_DZZZR_HELP
 
         merged_credentials = "|".join((self.url, user_credentials['captain'], user_credentials['login']))
-        dup_message = self._get_dup_session(merged_credentials)
+        dup_message = utils.get_dup_session(self.chat_id, merged_credentials)
         if dup_message:
             return dup_message
 
@@ -168,7 +150,7 @@ class DozoR(object):
         if login_page.status_code != 200:  # no cover until mocked tests
             return messages.DOZOR_AUTH_FAILED
 
-        answer = decode_page(login_page)
+        answer = utils.decode_page(login_page)
         message = LITE_MESSAGE.search(str(answer))
         if not message:  # no cover until mocked tests
             return messages.DOZOR_AUTH_FAILED
@@ -189,8 +171,8 @@ class DozoR(object):
         to_finish = LITE_TIME_TO.search(str(answer))
         if on_level and to_finish:
             return messages.DOZOR_TIME_ON_TEMPL % (
-                to_minutes(int(on_level.group(1))),
-                to_minutes(int(to_finish.group(1))),
+                utils.to_minutes(int(on_level.group(1))),
+                utils.to_minutes(int(to_finish.group(1))),
             )
 
     def time(self, _):
