@@ -64,5 +64,5 @@ class MainPage(webapp2.RequestHandler):
 
 app = webapp2.WSGIApplication([('/', MainPage)])
 
-if __name__ == '__main__':
-    app.run()  # noqa
+if __name__ == '__main__':  # pragma: no cover
+    app.run()
