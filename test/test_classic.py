@@ -110,6 +110,10 @@ class TestClassic(TestCase):
         self.assertIn(u"Код принят", self.send_message(u"1d23r4"))
         self.assertIn(u"Код не принят", self.send_message(u"2d23r4"))
 
+    def test_empty_text(self):
+        self.auth()
+        self.send_message(u" ", empty=True)
+
     def test_pause(self):
         self.auth()
         self.assertIn(u"/resume", self.send_message(u"/pause"))

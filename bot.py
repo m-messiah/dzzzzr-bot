@@ -125,13 +125,12 @@ class Bot(object):
             return None
         try:
             return getattr(self, command[1:], getattr(self.dozor, command[1:], self.not_found))(arguments)
-        except UnicodeEncodeError as e:
+        except UnicodeEncodeError as e:  # pragma: no cover
             return self.not_found(None)
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             logging.error(e)
 
-    def handle_text(self, message):
-        text = message['text']
+    def handle_text(self, text):
         if text.count(",") == 1:
             result = self.gps(text)
             if result:

@@ -50,12 +50,13 @@ class Message(dict):
             main.SESSIONS[sender_id] = Bot(self.get_sender())
 
         session = main.SESSIONS[sender_id]
+        text = self['text']
         try:
-            if self['text'][0] == '/':
-                output = session.handle_command(self['text'])
+            if text[0] == '/':
+                output = session.handle_command(text)
             else:
-                output = session.handle_text(self)
-        except Exception:
+                output = session.handle_text(text)
+        except Exception:  # pragma: no cover
             return {}
 
         if isinstance(output, tuple):

@@ -110,6 +110,43 @@ class TestApp(TestCase):
             }
         )
 
+    def test_json_edited_post(self):
+        request = webapp2.Request.blank("/")
+        request.method = "POST"
+        request.headers["Content-Type"] = "application/json"
+        request.body = json.encode({
+            'update': 1,
+            'edited_message': {
+                u'date': 1450696897,
+                u'text': u'/start',
+                u'from': {
+                    u'username': u'm_messiah',
+                    u'first_name': u'Maxim',
+                    u'last_name': u'Muzafarov',
+                    u'id': 1
+                },
+                u'message_id': 1,
+                u'chat': {
+                    u'type': u'group',
+                    u'id': -1,
+                    u'title': u'КС'
+                }
+            }
+        })
+        response = request.get_response(app)
+        self.assertEqual(response.status_int, 200)
+        self.assertIn("application/json", response.headers['Content-Type'])
+        self.assertDictEqual(
+            json.decode(response.body),
+            {
+                'method': 'sendMessage',
+                'text': messages.BOT_START,
+                'chat_id': -1,
+                'disable_web_page_preview': True,
+                'reply_to_message_id': 1,
+            }
+        )
+
     def test_json_text_post(self):
         request = webapp2.Request.blank("/")
         request.method = "POST"
@@ -119,6 +156,33 @@ class TestApp(TestCase):
             'message': {
                 u'date': 1450696897,
                 u'text': u'как дела?',
+                u'from': {
+                    u'username': u'm_messiah',
+                    u'first_name': u'Maxim',
+                    u'last_name': u'Muzafarov',
+                    u'id': 1
+                },
+                u'message_id': 1,
+                u'chat': {
+                    u'type': u'group',
+                    u'id': -1,
+                    u'title': u'КС'
+                }
+            }
+        })
+        response = request.get_response(app)
+        self.assertEqual(response.status_int, 200)
+        self.assertIn("application/json", response.headers['Content-Type'])
+        self.assertDictEqual(json.decode(response.body), {})
+
+    def test_json_unknown_post(self):
+        request = webapp2.Request.blank("/")
+        request.method = "POST"
+        request.headers["Content-Type"] = "application/json"
+        request.body = json.encode({
+            'update': 1,
+            'message': {
+                u'date': 1450696897,
                 u'from': {
                     u'username': u'm_messiah',
                     u'first_name': u'Maxim',

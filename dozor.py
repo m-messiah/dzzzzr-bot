@@ -40,9 +40,6 @@ class DozoR(object):
         self.browser = Session()
         self.dr_code = re_compile(ur"^[0-9dDдДrRlLzZрРлЛ]+$")
 
-    def help(self):
-        return messages.DOZOR_HELP
-
     def pause(self, _):
         self.enabled = False
         return messages.DOZOR_PAUSE
@@ -64,7 +61,7 @@ class DozoR(object):
                 )
             else:
                 answer = self.browser.get(self.url, stream=True)
-            if not answer:
+            if not answer:  # no cover until mocked tests
                 raise Exception()
             return decode_page(answer)
         except Exception:
@@ -112,7 +109,7 @@ class DozoR(object):
         except Exception as e:
             return False, messages.DOZOR_INCORRECT_TEMPL % e
 
-        if login_page.status_code != 200:
+        if login_page.status_code != 200:  # no cover until mocked tests
             return False, messages.DOZOR_AUTH_FAILED
 
         return True, login_page
@@ -124,11 +121,11 @@ class DozoR(object):
         try:
             answer = decode_page(login_page)
             message = answer.find(class_="sysmsg")
-            if not (message and message.get_text()):
+            if not (message and message.get_text()):  # no cover until mocked tests
                 return False, messages.DOZOR_AUTH_FAILED
             message = message.get_text()
             return messages.DOZOR_AUTH_PATTERN in message, message
-        except Exception as e:
+        except Exception as e:  # no cover until mocked tests
             return False, messages.DOZOR_BAD_PAGE_TEMPL % e
 
     def set_dzzzr(self, arguments):
@@ -166,12 +163,12 @@ class DozoR(object):
                 'User-Agent': "Mozilla/5.0 " + choice(USERAGENTS)
             })
             login_page = self.browser.get(self.url, params={'pin': pin}, stream=True)
-            if login_page.status_code != 200:
+            if login_page.status_code != 200:  # no cover until mocked tests
                 return messages.DOZOR_AUTH_FAILED
             else:
                 answer = decode_page(login_page)
                 message = LITE_MESSAGE.search(str(answer))
-                if not message:
+                if not message:  # no cover until mocked tests
                     return messages.DOZOR_AUTH_FAILED
 
                 message = message.group(1)
@@ -202,7 +199,7 @@ class DozoR(object):
                     to_minutes(int(to_finish.group(1))),
                 )
 
-        return messages.DOZOR_NO_ANSWER
+        return messages.DOZOR_NO_ANSWER  # no cover until mocked tests
 
     def _get_dzzzr_answer(self):
         try:
@@ -228,7 +225,7 @@ class DozoR(object):
                     len(codes),
                     u", ".join(messages.DOZOR_CODE_RANK_TEMPL % t for t in codes)
                 ))
-        except Exception:
+        except Exception:  # no cover until mocked tests
             pass
 
     def codes(self, _):
@@ -237,9 +234,9 @@ class DozoR(object):
             return message
         try:
             message = answer.find("strong", string=CODE_RANKS).parent
-        except Exception:
+        except Exception:  # no cover until mocked tests
             return messages.DOZOR_NO_CODE_RANKS
-        if not message:
+        if not message:  # no cover until mocked tests
             return messages.DOZOR_NO_ANSWER
 
         message = unicode(message).split(u"Коды сложности")[1]
@@ -252,7 +249,7 @@ class DozoR(object):
         if message and message.get_text():
             message_answer = message.get_text()
         else:
-            message_answer = messages.DOZOR_NO_ANSWER
+            message_answer = messages.DOZOR_NO_ANSWER  # no cover until mocked tests
         return code + " - " + message_answer
 
     def _lite_result(self, code, answer):
@@ -260,7 +257,7 @@ class DozoR(object):
         if message:
             message_answer = message.group(1).decode("utf8")
         else:
-            message_answer = messages.DOZOR_NO_ANSWER
+            message_answer = messages.DOZOR_NO_ANSWER  # no cover until mocked tests
         return code + u" - " + message_answer
 
     def _send_code(self, code):
@@ -268,14 +265,14 @@ class DozoR(object):
             return code + u" - " + messages.DOZOR_NEED_AUTH
         try:
             answer = self.get_dzzzr(code=code)
-        except Exception as e:
+        except Exception as e:  # no cover until mocked tests
             return e.message
         try:
             if self.classic:
                 return self._classic_result(code, answer)
             else:
                 return self._lite_result(code, answer)
-        except Exception:
+        except Exception:  # no cover until mocked tests
             return messages.DOZOR_NO_ANSWER
 
     def _handle_code(self, code):
