@@ -5,6 +5,7 @@ import time
 import os.path
 from multiprocessing import Process
 from test_lite_engine import app as lite_engine
+import messages
 from main import app, SESSIONS
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lib'))
 # mac os
@@ -72,7 +73,7 @@ class TestLite(TestCase):
 
     def test_auth_bad_pin(self):
         response = self.send_message("/set_lite http://localhost:5001/ 12345")
-        self.assertIn(u"Авторизация не удалась", response, "Bad password")
+        self.assertIn(messages.DOZOR_AUTH_FAILED, response, "Bad password")
 
     def test_auth_good(self):
         response = self.auth()

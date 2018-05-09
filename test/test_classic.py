@@ -5,6 +5,7 @@ import time
 import os.path
 from multiprocessing import Process
 from test_classic_engine import app as dr_engine
+import messages
 from main import app, SESSIONS
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lib'))
 # mac os
@@ -102,7 +103,7 @@ class TestClassic(TestCase):
 
     def test_set_dzzzr_bad_password(self):
         response = self.send_message("/set_dzzzr http://localhost:5000/ spb_Captain 123456 bot wrongpassword")
-        self.assertIn(u"Авторизация не удалась", response)
+        self.assertIn(messages.DOZOR_AUTH_FAILED, response)
 
     def test_code(self):
         self.auth()
@@ -118,7 +119,7 @@ class TestClassic(TestCase):
         self.auth()
         self.engine.terminate()
         response = self.send_message(u"/codes")
-        self.assertIn(u"Нет ответа", response)
+        self.assertIn(messages.DOZOR_NO_ANSWER, response)
 
     def test_remain_codes(self):
         self.auth()
@@ -129,7 +130,7 @@ class TestClassic(TestCase):
 
     def test_codes_no_auth(self):
         response = self.send_message(u"/codes")
-        self.assertIn(u"Сначала надо войти в движок", response)
+        self.assertIn(messages.DOZOR_NEED_AUTH, response)
 
     def test_time(self):
         self.auth()
@@ -139,10 +140,10 @@ class TestClassic(TestCase):
 
     def test_time_no_auth(self):
         response = self.send_message(u"/time")
-        self.assertIn(u"Сначала надо войти в движок", response)
+        self.assertIn(messages.DOZOR_NEED_AUTH, response)
 
     def test_time_bad_engine(self):
         self.auth()
         self.engine.terminate()
         response = self.send_message(u"/time")
-        self.assertIn(u"Нет ответа", response)
+        self.assertIn(messages.DOZOR_NO_ANSWER, response)

@@ -3,6 +3,7 @@ import logging
 from random import choice
 
 import main
+import messages
 from bot import Bot
 
 
@@ -70,16 +71,9 @@ class Message(dict):
         return self.response("id = %s" % self['contact'].get('user_id', "none"), is_reply=True)
 
     def handle_new_chat_participant(self):
-        output = u"Привет, %s! " % self['new_chat_participant'].get('first_name')
-        output += choice([
-            u"Во время игры мы тут не флудим.",
-            u"Я буду отправлять найденные коды сразу в движок.",
-            u"Буду краток - тебя ждали.",
-            u"А мы тебя уже давно ждём.",
-            u"А меня зовут Бот. Приятно познакомиться.",
-            u"Как %s?" % choice([u"оно", u"дела", u"жизнь", u"ты сюда попал(а)"]),
-        ])
+        output = messages.BOT_GREETING_TEMPL % self['new_chat_participant'].get('first_name')
+        output += choice(messages.BOT_GREETING_PHRASES)
         return self.response(output)
 
     def left_chat_participant(self):
-        return self.response(u"А я буду скучать...")
+        return self.response(messages.BOT_LEFT_PARTICIPANT)

@@ -2,6 +2,7 @@
 import webapp2
 from webapp2_extras import json
 
+import messages
 from message import Message
 
 __author__ = 'm_messiah'
@@ -26,10 +27,7 @@ class MainPage(webapp2.RequestHandler):
         self.response.write(json.encode(response))
 
     def _show_error(self):
-        self._answer({
-            'result': "Info",
-            "name": "I am DR bot (https://telegram.me/DzzzzR_bot)"
-        })
+        self._answer({'result': "Info", "name": messages.DEFAULT_ANSWER})
 
     def _inline_query(self, query):
         return self._answer({
@@ -40,8 +38,8 @@ class MainPage(webapp2.RequestHandler):
                 'type': 'article',
                 'id': "1",
                 'title': "405",
-                'message_text': "Inline mode not implemented",
-                'description': "Inline-режим не реализован"
+                'message_text': messages.INLINE_TEXT,
+                'description': messages.INLINE_DESCRIPTION,
             }])
         })
 

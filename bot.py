@@ -3,6 +3,7 @@ import logging
 from base64 import b64decode, b64encode
 
 import main
+import messages
 from dozor import DozoR
 
 __author__ = 'm_messiah'
@@ -21,35 +22,23 @@ class Bot(object):
         self.chat_id = sender['id']
         self.title = sender.get('title', sender.get('username', ''))
         self.dozor = DozoR(self.chat_id)
-        self.name = "@DzzzzR_bot"
+        self.name = messages.BOT_NAME
 
     def show_sessions(self, _):
         sessions = ["%s (%s)" % (v.title, k) for k, v in main.SESSIONS.items()]
-        return u"Сейчас используют:\n" + u"\n".join(sessions)
+        return messages.BOT_SESSIONS_TEMPL % u"\n".join(sessions)
 
     def not_found(self, _):
-        return (u"Команда не найдена. Используйте /help \n"
-                u"Или дайте денег автору, и он сделает такую команду")
+        return messages.BOT_COMMAND_NOT_FOUND
 
     def version(self, _):
-        return u"Версия: 3.2.3"
+        return messages.BOT_VERSION
 
     def help(self, _):
-        return (
-            u"Я могу принимать следующие команды:\n"
-            u"/help - эта справка\n"
-            u"/about - информация об авторе\n"
-            u"/start - команда заглушка, эмулирующая начало общения\n"
-            u"/stop - команда удаляющая сессию общения с ботом\n"
-            u"\n"
-            u"/base64 <text> - Base64 кодирование/раскодирование\n"
-            u"/gps <lat, long> - Карта по координатам\n"
-            u"/pos <num1 num2 numN> - Слово из порядковых букв в алфавите\n"
-            u"\nDozoR\n" + self.dozor.help()
-        )
+        return messages.BOT_HELP
 
     def start(self, _):
-        return u"Внимательно слушаю!"
+        return messages.BOT_START
 
     def stop(self, _):
         try:
@@ -58,15 +47,10 @@ class Bot(object):
             del main.SESSIONS[self.chat_id]
         except Exception:
             pass
-        return u"До новых встреч!"
+        return messages.BOT_STOP
 
     def about(self, _):
-        return (u"Привет!\n"
-                u"Мой автор @m_messiah\n"
-                u"Мой код: https://github.com/m-messiah/dzzzzr-bot\n"
-                u"\nА еще принимаются пожертвования:\n"
-                u"https://paypal.me/muzafarov\n"
-                u"http://yasobe.ru/na/m_messiah")
+        return messages.BOT_ABOUT
 
     def base64(self, arguments):
         response = None
@@ -158,4 +142,4 @@ class Bot(object):
             return result
 
         if u"привет" in text.lower() and u"бот" in text.lower():
-            return u"Привет!"
+            return messages.BOT_HELLO

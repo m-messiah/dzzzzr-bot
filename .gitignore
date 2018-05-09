@@ -4,3 +4,7 @@ client_secret.json
 lib/
 
 .DS_Store
+
+/.coverage
+
+/cover/

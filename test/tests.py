@@ -2,6 +2,7 @@
 from unittest import TestCase
 import sys
 import os.path
+import messages
 from main import app, SESSIONS
 from dozor import DozoR
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lib'))
@@ -24,7 +25,7 @@ class TestApp(TestCase):
         self.assertIn("application/json", response.headers['Content-Type'])
         self.assertDictEqual(
             json.decode(response.body),
-            {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)", "result": "Info"}
+            {"name": messages.DEFAULT_ANSWER, "result": "Info"}
         )
 
     def test_get(self):
@@ -34,7 +35,7 @@ class TestApp(TestCase):
         self.assertIn("application/json", response.headers['Content-Type'])
         self.assertDictEqual(
             json.decode(response.body),
-            {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)", "result": "Info"}
+            {"name": messages.DEFAULT_ANSWER, "result": "Info"}
         )
 
     def test_bad_post(self):
@@ -45,7 +46,7 @@ class TestApp(TestCase):
         self.assertIn("application/json", response.headers['Content-Type'])
         self.assertDictEqual(
             json.decode(response.body),
-            {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)", "result": "Info"}
+            {"name": messages.DEFAULT_ANSWER, "result": "Info"}
         )
 
     def test_json_empty_post(self):
@@ -57,7 +58,7 @@ class TestApp(TestCase):
         self.assertIn("application/json", response.headers['Content-Type'])
         self.assertDictEqual(
             json.decode(response.body),
-            {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)", "result": "Info"}
+            {"name": messages.DEFAULT_ANSWER, "result": "Info"}
         )
 
     def test_no_json_empty_post(self):
@@ -69,7 +70,7 @@ class TestApp(TestCase):
         self.assertIn("application/json", response.headers['Content-Type'])
         self.assertDictEqual(
             json.decode(response.body),
-            {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)", "result": "Info"}
+            {"name": messages.DEFAULT_ANSWER, "result": "Info"}
         )
 
     def test_json_start_post(self):
@@ -102,7 +103,7 @@ class TestApp(TestCase):
             json.decode(response.body),
             {
                 'method': 'sendMessage',
-                'text': u"Внимательно слушаю!",
+                'text': messages.BOT_START,
                 'chat_id': -1,
                 'disable_web_page_preview': True,
                 'reply_to_message_id': 1,
@@ -166,7 +167,7 @@ class TestApp(TestCase):
         response = json.decode(response.body)
         self.assertIn('results', response)
         self.assertEqual('answerInlineQuery', response['method'])
-        self.assertIn('Inline mode not implemented', response['results'])
+        self.assertIn(messages.INLINE_TEXT, response['results'])
 
     def test_json_empty(self):
         request = webapp2.Request.blank("/")
@@ -180,7 +181,7 @@ class TestApp(TestCase):
         self.assertIn("application/json", response.headers['Content-Type'])
         self.assertDictEqual(
             json.decode(response.body),
-            {"name": "I am DR bot (https://telegram.me/DzzzzR_bot)", "result": "Info"}
+            {"name": messages.DEFAULT_ANSWER, "result": "Info"}
         )
 
     def test_json_contact(self):
@@ -277,7 +278,7 @@ class TestApp(TestCase):
         self.assertIn("application/json", response.headers['Content-Type'])
         response = json.decode(response.body)
         self.assertIn('text', response)
-        self.assertEqual(u"А я буду скучать...", response['text'])
+        self.assertEqual(messages.BOT_LEFT_PARTICIPANT, response['text'])
 
     def test_sessions(self):
         request = webapp2.Request.blank("/")
@@ -386,30 +387,22 @@ class TestBot(TestCase):
         return response['latitude'], response['longitude']
 
     def test_not_found(self):
-        self.assertIn(u"Команда не найдена. Используйте /help", self.send_message("/abracadabra"))
+        self.assertIn(messages.BOT_COMMAND_NOT_FOUND, self.send_message("/abracadabra"))
 
     def test_start(self):
-        self.assertEqual(u"Внимательно слушаю!", self.send_message("/start"))
+        self.assertEqual(messages.BOT_START, self.send_message("/start"))
 
     def test_start_name(self):
-        self.assertEqual(u"Внимательно слушаю!", self.send_message("/start@DzzzzR_bot"))
+        self.assertEqual(messages.BOT_START, self.send_message("/start@DzzzzR_bot"))
 
     def test_bad_command(self):
         self.send_message("/start@", empty=True)
 
     def test_show_sessions(self):
-        self.assertIn(u"Сейчас используют", self.send_message("/show_sessions"))
+        self.assertIn(messages.BOT_SESSIONS_TEMPL[:-2], self.send_message("/show_sessions"))
 
     def test_about(self):
-        self.assertEqual(
-            u"Привет!\n"
-            u"Мой автор @m_messiah\n"
-            u"Мой код: https://github.com/m-messiah/dzzzzr-bot\n"
-            u"\nА еще принимаются пожертвования:\n"
-            u"https://paypal.me/muzafarov\n"
-            u"http://yasobe.ru/na/m_messiah",
-            self.send_message("/about")
-        )
+        self.assertEqual(messages.BOT_ABOUT, self.send_message("/about"))
 
     def test_base64(self):
         self.assertEqual(u"0J/RgNC40LLQtdGC", self.send_message(u"/base64 Привет"))
@@ -435,13 +428,13 @@ class TestBot(TestCase):
         self.send_gps(u"x y z, a b c", empty=True)
 
     def test_version(self):
-        self.assertIn(u"Версия", self.send_message(u"/version"))
+        self.assertIn(messages.BOT_VERSION, self.send_message(u"/version"))
 
     def test_hello(self):
-        self.assertEqual(u"Привет!", self.send_message(u"Привет бот!"))
+        self.assertEqual(messages.BOT_HELLO, self.send_message(u"Привет бот!"))
 
     def test_help(self):
-        self.assertIn(u"Я могу принимать следующие команды:\n", self.send_message(u"/help"))
+        self.assertIn(messages.BOT_HELP, self.send_message(u"/help"))
 
 
 class TestCodeParsing(TestCase):
@@ -454,7 +447,7 @@ def generator_codes(prefix, code):
     def test(self):
         self.d.prefix = prefix
         result = self.d.handle_text(code)
-        self.assertIn(u"войти в движок", result)
+        self.assertIn(messages.DOZOR_NEED_AUTH, result)
     return test
 
 

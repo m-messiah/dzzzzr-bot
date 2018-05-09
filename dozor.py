@@ -8,10 +8,13 @@ from bs4 import BeautifulSoup
 from requests import Session
 
 import main
+import messages
 from useragents import USERAGENTS
 
 __author__ = 'm_messiah'
 
+CODE_RANKS = re_compile(u"Коды сложности")
+TIME_ON = re_compile(u"Время на уровне:")
 LITE_MESSAGE = re_compile(ur'<!--errorText--><p><strong>(.*?)</strong></p><!--errorTextEnd-->')
 LITE_TIME_ON = re_compile(ur'<!--timeOnLevelBegin (\d*?) timeOnLevelEnd-->')
 LITE_TIME_TO = re_compile(ur'<!--timeToFinishBegin (\d*?) timeToFinishEnd-->')
@@ -38,34 +41,15 @@ class DozoR(object):
         self.dr_code = re_compile(ur"^[0-9dDдДrRlLzZрРлЛ]+$")
 
     def help(self):
-        return (
-            u"/set_dzzzr url captain pin login password - "
-            u"  установить урл и учетные данные для движка DozoR.\n"
-            u"Если все коды имеют префикс игры (например 27d),"
-            u"то его можно указать здесь \n"
-            u"/set_dzzzr url captain pin login password prefix \n"
-            u"и отправлять коды уже в сокращенном виде (12r3 = 27d12r3)\n"
-            u"Если коды не стандартные, то можно указать regexp для того, "
-            u"как выглядит код (например, для 1d2r regexp будет [0-9dDrR]+ )\n"
-            u"/set_dzzzr url captain pin login password [0-9dDrR]+ \n"
-            u"Префикс и regexp - необязательные параметры. "
-            u"(если нужны оба - сначала префикс, потом regexp)\n"
-            u"\n/pause - приостанавливает отправку кодов\n"
-            u"/resume - возобновляет отправку кодов\n"
-            u"\nСами коды могут пристуствовать в любом сообщении в чате "
-            u"как с русскими буквами, так и английскими, "
-            u"игнорируя регистр символов. "
-            u"(Главное, чтобы сообщение начиналось с кода)"
-        )
+        return messages.DOZOR_HELP
 
     def pause(self, _):
         self.enabled = False
-        return (u"Ок, я больше не буду реагировать на сообщения мне (не считая команды).\n"
-                u"Не забудьте потом включить с помощью /resume")
+        return messages.DOZOR_PAUSE
 
     def resume(self, _):
         self.enabled = True
-        return u"Я вернулся! Давайте ваши коды!"
+        return messages.DOZOR_RESUME
 
     def get_dzzzr(self, code=None):
         try:
@@ -84,7 +68,7 @@ class DozoR(object):
                 raise Exception()
             return decode_page(answer)
         except Exception:
-            raise Exception(u"Нет ответа. Проверьте вручную.")
+            raise Exception(messages.DOZOR_NO_ANSWER)
 
     def _handle_set_dzzzr_arguments(self, arguments):
         arguments = arguments.split()
@@ -106,8 +90,7 @@ class DozoR(object):
     def _get_dup_session(self, captain, login):
         merged = "|".join((self.url, captain, login))
         if merged in main.CREDENTIALS and self.chat_id != main.CREDENTIALS[merged]:
-            return (u"Бот уже используется этой командой. В чате %s\n"
-                    u"Сначала остановите его. (/stop)\n" % main.SESSIONS[main.CREDENTIALS[merged]].title)
+            return messages.DOZOR_DUPLICATE_TEMPL % main.SESSIONS[main.CREDENTIALS[merged]].title
 
     def _send_dzzzr_auth(self, captain, pin, login, password):
         self.browser.headers.update({
@@ -127,10 +110,10 @@ class DozoR(object):
                 stream=True
             )
         except Exception as e:
-            return False, "Incorrect format (%s)" % e
+            return False, messages.DOZOR_INCORRECT_TEMPL % e
 
         if login_page.status_code != 200:
-            return False, u"Авторизация не удалась"
+            return False, messages.DOZOR_AUTH_FAILED
 
         return True, login_page
 
@@ -142,20 +125,17 @@ class DozoR(object):
             answer = decode_page(login_page)
             message = answer.find(class_="sysmsg")
             if not (message and message.get_text()):
-                return False, u"Авторизация не удалась"
+                return False, messages.DOZOR_AUTH_FAILED
             message = message.get_text()
-            return u"Авторизация пройдена успешно" in message, message
+            return messages.DOZOR_AUTH_PATTERN in message, message
         except Exception as e:
-            return False, "Incorrect page (%s)" % e
+            return False, messages.DOZOR_BAD_PAGE_TEMPL % e
 
     def set_dzzzr(self, arguments):
         try:
             captain, pin, login, password = self._handle_set_dzzzr_arguments(arguments)
         except Exception:
-            return (
-                u"Использование:\n"
-                u"/set_dzzzr url captain pin login password [prefix] [regexp]"
-            )
+            return messages.DOZOR_SET_DZZZR_HELP
 
         dup_message = self._get_dup_session(captain, login)
         if dup_message:
@@ -169,7 +149,7 @@ class DozoR(object):
         self.classic = True
         self.credentials = "|".join((self.url, captain, login))
         main.CREDENTIALS[self.credentials] = self.chat_id
-        return u"Добро пожаловать, %s" % login
+        return messages.DOZOR_WELCOME_TEMPL % login
 
     def set_lite(self, arguments):
         try:
@@ -179,7 +159,7 @@ class DozoR(object):
             else:
                 raise ValueError
         except ValueError:
-            return u"Использование:\n/set_lite url pin"
+            return messages.DOZOR_SET_LITE_HELP
         else:
             self.browser.headers.update({
                 'referer': self.url,
@@ -187,15 +167,14 @@ class DozoR(object):
             })
             login_page = self.browser.get(self.url, params={'pin': pin}, stream=True)
             if login_page.status_code != 200:
-                return u"Авторизация не удалась"
+                return messages.DOZOR_AUTH_FAILED
             else:
                 answer = decode_page(login_page)
                 message = LITE_MESSAGE.search(str(answer))
-                if message:
-                    message = message.group(1)
-                else:
-                    message = u"Авторизация не удалась"
-                    return message
+                if not message:
+                    return messages.DOZOR_AUTH_FAILED
+
+                message = message.group(1)
                 self.enabled = True
                 self.classic = False
                 self.credentials = "|".join((self.url, pin))
@@ -208,7 +187,7 @@ class DozoR(object):
             return message
 
         if self.classic:
-            message = answer.find("p", string=re_compile(u"Время на уровне:"))
+            message = answer.find("p", string=TIME_ON)
             if message and message.get_text():
                 return u" ".join(message.get_text().split()[:4])
         else:
@@ -218,17 +197,17 @@ class DozoR(object):
             on_level = LITE_TIME_ON.search(str(answer))
             to_finish = LITE_TIME_TO.search(str(answer))
             if on_level and to_finish:
-                return u"Время на уровне: %s, Осталось: %s" % (
+                return messages.DOZOR_TIME_ON_TEMPL % (
                     to_minutes(int(on_level.group(1))),
                     to_minutes(int(to_finish.group(1))),
                 )
 
-        return u"Нет ответа"
+        return messages.DOZOR_NO_ANSWER
 
     def _get_dzzzr_answer(self):
         try:
             if self.url == "":
-                raise Exception(u"Сначала надо войти в движок")
+                raise Exception(messages.DOZOR_NEED_AUTH)
             return self.get_dzzzr(), None
         except Exception as e:
             return None, unicode(e.message)
@@ -244,10 +223,10 @@ class DozoR(object):
             codes = codes.strip().split(u", ")
             codes = [c for c in enumerate(codes, start=1) if u"span" not in c[1]]
             return (
-                u"%s (осталось %s): %s" % (
+                messages.DOZOR_SECTOR_CODES_TEMPL % (
                     sector_name,
                     len(codes),
-                    u", ".join(u"%s (%s)" % t for t in codes)
+                    u", ".join(messages.DOZOR_CODE_RANK_TEMPL % t for t in codes)
                 ))
         except Exception:
             pass
@@ -257,11 +236,11 @@ class DozoR(object):
         if message:
             return message
         try:
-            message = answer.find("strong", string=re_compile(u"Коды сложности")).parent
+            message = answer.find("strong", string=CODE_RANKS).parent
         except Exception:
-            return u"Коды сложности не найдены"
+            return messages.DOZOR_NO_CODE_RANKS
         if not message:
-            return u"Нет ответа"
+            return messages.DOZOR_NO_ANSWER
 
         message = unicode(message).split(u"Коды сложности")[1]
         sectors = re_split("<br/?>", message)[:-1]
@@ -273,7 +252,7 @@ class DozoR(object):
         if message and message.get_text():
             message_answer = message.get_text()
         else:
-            message_answer = u"нет ответа"
+            message_answer = messages.DOZOR_NO_ANSWER
         return code + " - " + message_answer
 
     def _lite_result(self, code, answer):
@@ -281,12 +260,12 @@ class DozoR(object):
         if message:
             message_answer = message.group(1).decode("utf8")
         else:
-            message_answer = u"нет ответа"
+            message_answer = messages.DOZOR_NO_ANSWER
         return code + u" - " + message_answer
 
     def _send_code(self, code):
         if self.url == "":
-            return code + u" - сначала надо войти в движок"
+            return code + u" - " + messages.DOZOR_NEED_AUTH
         try:
             answer = self.get_dzzzr(code=code)
         except Exception as e:
@@ -297,7 +276,7 @@ class DozoR(object):
             else:
                 return self._lite_result(code, answer)
         except Exception:
-            return u"нет ответа"
+            return messages.DOZOR_NO_ANSWER
 
     def _handle_code(self, code):
         if not self.dr_code.match(code):
