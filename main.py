@@ -51,8 +51,7 @@ class MainPage(webapp2.RequestHandler):
 
         if 'inline_query' in update:
             return self._inline_query(update['inline_query'])
-
-        if 'message' in update:
+        elif 'message' in update:
             message = Message(update['message'])
         elif 'edited_message' in update:
             message = Message(update['edited_message'])

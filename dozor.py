@@ -20,6 +20,10 @@ LITE_TIME_ON = re_compile(ur'<!--timeOnLevelBegin (\d*?) timeOnLevelEnd-->')
 LITE_TIME_TO = re_compile(ur'<!--timeToFinishBegin (\d*?) timeToFinishEnd-->')
 
 
+def to_minutes(sec):
+    return u"%s:%s" % (sec / 60, sec % 60)
+
+
 def decode_page(page):
     page_content = page.raw.read()
     try:
@@ -72,35 +76,37 @@ class DozoR(object):
         if len(arguments) < 5:
             raise ValueError
 
+        self.url = arguments[0]
+        self.prefix = ""
         if len(arguments) > 5:
             if "[" not in arguments[5]:
                 self.prefix = arguments[5].upper()
             else:
                 self.dr_code = re_compile(ur"^%s$" % arguments[5])
-        else:
-            self.prefix = ""
+
         if len(arguments) > 6:
             self.dr_code = re_compile(ur"^%s$" % arguments[6])
-        self.url = arguments[0]
-        return arguments[1:5]
+        return dict(zip(('captain', 'pin', 'login', 'password'), arguments[1:5]))
 
-    def _get_dup_session(self, captain, login):
-        merged = "|".join((self.url, captain, login))
-        if merged in main.CREDENTIALS and self.chat_id != main.CREDENTIALS[merged]:
-            return messages.DOZOR_DUPLICATE_TEMPL % main.SESSIONS[main.CREDENTIALS[merged]].title
+    def _get_dup_session(self, merged_credentials):
+        if merged_credentials in main.CREDENTIALS and self.chat_id != main.CREDENTIALS[merged_credentials]:
+            return messages.DOZOR_DUPLICATE_TEMPL % main.SESSIONS[main.CREDENTIALS[merged_credentials]].title
 
-    def _send_dzzzr_auth(self, captain, pin, login, password):
+    def _update_headers(self):
         self.browser.headers.update({
             'referer': self.url,
             'User-Agent': "Mozilla/5.0 " + choice(USERAGENTS)
         })
-        self.browser.auth = (captain, pin)
+
+    def _send_dzzzr_auth(self, user_credentials):
+        self._update_headers()
+        self.browser.auth = (user_credentials['captain'], user_credentials['pin'])
         try:
             login_page = self.browser.post(
                 self.url,
                 data={
-                    'login': login,
-                    'password': password,
+                    'login': user_credentials['login'],
+                    'password': user_credentials['password'],
                     'action': "auth",
                     'notags': ''
                 },
@@ -114,8 +120,8 @@ class DozoR(object):
 
         return True, login_page
 
-    def _dzzzr_auth(self, captain, pin, login, password):
-        is_authenticated, login_page = self._send_dzzzr_auth(captain, pin, login, password)
+    def _dzzzr_auth(self, user_credentials):
+        is_authenticated, login_page = self._send_dzzzr_auth(user_credentials)
         if not is_authenticated:
             return False, login_page
         try:
@@ -130,53 +136,45 @@ class DozoR(object):
 
     def set_dzzzr(self, arguments):
         try:
-            captain, pin, login, password = self._handle_set_dzzzr_arguments(arguments)
+            user_credentials = self._handle_set_dzzzr_arguments(arguments)
         except Exception:
             return messages.DOZOR_SET_DZZZR_HELP
 
-        dup_message = self._get_dup_session(captain, login)
+        merged_credentials = "|".join((self.url, user_credentials['captain'], user_credentials['login']))
+        dup_message = self._get_dup_session(merged_credentials)
         if dup_message:
             return dup_message
 
-        is_authenticated, message = self._dzzzr_auth(captain, pin, login, password)
+        is_authenticated, message = self._dzzzr_auth(user_credentials)
         if not is_authenticated:
             return message
 
         self.enabled = True
         self.classic = True
-        self.credentials = "|".join((self.url, captain, login))
+        self.credentials = merged_credentials
         main.CREDENTIALS[self.credentials] = self.chat_id
-        return messages.DOZOR_WELCOME_TEMPL % login
+        return messages.DOZOR_WELCOME_TEMPL % user_credentials['login']
 
     def set_lite(self, arguments):
-        try:
-            arguments = arguments.split()
-            if len(arguments) > 1:
-                self.url, pin = arguments[:2]
-            else:
-                raise ValueError
-        except ValueError:
+        arguments = arguments.split()
+        if len(arguments) < 2:
             return messages.DOZOR_SET_LITE_HELP
-        else:
-            self.browser.headers.update({
-                'referer': self.url,
-                'User-Agent': "Mozilla/5.0 " + choice(USERAGENTS)
-            })
-            login_page = self.browser.get(self.url, params={'pin': pin}, stream=True)
-            if login_page.status_code != 200:  # no cover until mocked tests
-                return messages.DOZOR_AUTH_FAILED
-            else:
-                answer = decode_page(login_page)
-                message = LITE_MESSAGE.search(str(answer))
-                if not message:  # no cover until mocked tests
-                    return messages.DOZOR_AUTH_FAILED
+        self.url, pin = arguments[:2]
+        self._update_headers()
+        login_page = self.browser.get(self.url, params={'pin': pin}, stream=True)
+        if login_page.status_code != 200:  # no cover until mocked tests
+            return messages.DOZOR_AUTH_FAILED
 
-                message = message.group(1)
-                self.enabled = True
-                self.classic = False
-                self.credentials = "|".join((self.url, pin))
-                main.CREDENTIALS[self.credentials] = self.chat_id
-                return message
+        answer = decode_page(login_page)
+        message = LITE_MESSAGE.search(str(answer))
+        if not message:  # no cover until mocked tests
+            return messages.DOZOR_AUTH_FAILED
+
+        self.enabled = True
+        self.classic = False
+        self.credentials = "|".join((self.url, pin))
+        main.CREDENTIALS[self.credentials] = self.chat_id
+        return message.group(1)
 
     def time(self, _):
         answer, message = self._get_dzzzr_answer()
@@ -188,9 +186,6 @@ class DozoR(object):
             if message and message.get_text():
                 return u" ".join(message.get_text().split()[:4])
         else:
-            def to_minutes(sec):
-                return u"%s:%s" % (sec / 60, sec % 60)
-
             on_level = LITE_TIME_ON.search(str(answer))
             to_finish = LITE_TIME_TO.search(str(answer))
             if on_level and to_finish:
@@ -270,8 +265,7 @@ class DozoR(object):
         try:
             if self.classic:
                 return self._classic_result(code, answer)
-            else:
-                return self._lite_result(code, answer)
+            return self._lite_result(code, answer)
         except Exception:  # no cover until mocked tests
             return messages.DOZOR_NO_ANSWER
 

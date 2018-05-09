@@ -130,15 +130,16 @@ class Bot(object):
         except Exception as e:  # pragma: no cover
             logging.error(e)
 
-    def handle_text(self, text):
+    def try_gps(self, text):
         if text.count(",") == 1:
-            result = self.gps(text)
-            if result:
-                return result
+            return self.gps(text)
 
-        result = self.dozor.handle_text(text)
-        if result:
-            return result
-
+    def try_hello(self, text):
         if u"привет" in text.lower() and u"бот" in text.lower():
             return messages.BOT_HELLO
+
+    def handle_text(self, text):
+        for try_text in (self.try_gps, self.dozor.handle_text, self.try_hello):
+            result = try_text(text)
+            if result:
+                return result
