@@ -14,9 +14,6 @@ __author__ = 'm_messiah'
 
 CODE_RANKS = re_compile(u"Коды сложности")
 TIME_ON = re_compile(u"Время на уровне:")
-LITE_MESSAGE = re_compile(ur'<!--errorText--><p><strong>(.*?)</strong></p><!--errorTextEnd-->')
-LITE_TIME_ON = re_compile(ur'<!--timeOnLevelBegin (\d*?) timeOnLevelEnd-->')
-LITE_TIME_TO = re_compile(ur'<!--timeToFinishBegin (\d*?) timeToFinishEnd-->')
 
 
 class DozoR(object):
@@ -161,27 +158,12 @@ class DozoR(object):
         main.CREDENTIALS[self.credentials] = self.chat_id
         return message.group(1)
 
-    def _parse_classic_time(self, answer):
-        message = answer.find("p", string=TIME_ON)
-        if message and message.get_text():
-            return u" ".join(message.get_text().split()[:4])
-
-    def _parse_lite_time(self, answer):
-        on_level = LITE_TIME_ON.search(str(answer))
-        to_finish = LITE_TIME_TO.search(str(answer))
-        if on_level and to_finish:
-            return messages.DOZOR_TIME_ON_TEMPL % (
-                utils.to_minutes(int(on_level.group(1))),
-                utils.to_minutes(int(to_finish.group(1))),
-            )
-
     def time(self, _):
         answer, message = self._get_dzzzr_answer()
         if message:
             return message
 
-        parser = self._parse_classic_time if self.classic else self._parse_lite_time
-        return parser(answer) or messages.DOZOR_NO_ANSWER
+        return utils.parse_time(answer, self.classic) or messages.DOZOR_NO_ANSWER
 
     def _get_dzzzr_answer(self):
         try:
@@ -226,22 +208,6 @@ class DozoR(object):
         result = filter(None, map(self._parse_sector, sectors))
         return u"\n".join(result)
 
-    def _classic_result(self, code, answer):
-        message = answer.find(class_="sysmsg")
-        if message and message.get_text():
-            message_answer = message.get_text()
-        else:
-            message_answer = messages.DOZOR_NO_ANSWER  # no cover until mocked tests
-        return code + " - " + message_answer
-
-    def _lite_result(self, code, answer):
-        message = LITE_MESSAGE.search(str(answer))
-        if message:
-            message_answer = message.group(1).decode("utf8")
-        else:
-            message_answer = messages.DOZOR_NO_ANSWER  # no cover until mocked tests
-        return code + u" - " + message_answer
-
     def _send_code(self, code):
         if self.url == "":
             return code + u" - " + messages.DOZOR_NEED_AUTH
@@ -250,9 +216,8 @@ class DozoR(object):
         except Exception as e:  # no cover until mocked tests
             return e.message
 
-        result_handler = self._classic_result if self.classic else self._lite_result
         try:
-            return result_handler(code, answer)
+            return utils.parse_code_result(code, answer, self.classic)
         except Exception:  # no cover until mocked tests
             return messages.DOZOR_NO_ANSWER
 
