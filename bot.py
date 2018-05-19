@@ -1,5 +1,6 @@
 # coding=utf-8
 import logging
+import traceback
 from base64 import b64decode, b64encode
 
 import main
@@ -43,10 +44,12 @@ class Bot(object):
     def stop(self, _):
         try:
             self.dozor.enabled = False
-            del main.CREDENTIALS[self.dozor.credentials]
-            del main.SESSIONS[self.chat_id]
-        except Exception:
-            pass
+            if self.dozor.credentials and self.dozor.credentials in main.CREDENTIALS:
+                del main.CREDENTIALS[self.dozor.credentials]
+            if self.chat_id in main.SESSIONS:
+                del main.SESSIONS[self.chat_id]
+        except Exception as e:
+            logging.warn(traceback.format_exc())
         return messages.BOT_STOP
 
     def about(self, _):
@@ -124,7 +127,7 @@ class Bot(object):
         if "@" in command:
             return None
         try:
-            return getattr(self, command[1:], getattr(self.dozor, command[1:], self.not_found))(arguments)
+          return getattr(self, command[1:], getattr(self.dozor, command[1:], self.not_found))(arguments)
         except UnicodeEncodeError as e:  # pragma: no cover
             return self.not_found(None)
         except Exception as e:  # pragma: no cover

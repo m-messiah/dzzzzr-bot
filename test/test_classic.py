@@ -6,7 +6,7 @@ import os.path
 from multiprocessing import Process
 from test_classic_engine import app as dr_engine
 import messages
-from main import app, SESSIONS
+from main import app, SESSIONS, CREDENTIALS
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lib'))
 # mac os
 google_cloud_sdk_path = '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/platform/google_appengine'
@@ -28,12 +28,14 @@ class TestClassic(TestCase):
         time.sleep(1)
 
     def tearDown(self):
+        print CREDENTIALS
         self.send_message('/stop')
+        self.send_message("/stop", chat_id=2)
         self.engine.terminate()
         time.sleep(1)
 
     def auth(self):
-        self.send_message("/set_dzzzr http://localhost:5000/ spb_Captain 123456 bot botpassword")
+        return self.send_message("/set_dzzzr http://localhost:5000/ spb_Captain 123456 bot botpassword")
 
     def send_message(self, text, chat_id=1, empty=False):
         request = webapp2.Request.blank("/")
@@ -52,7 +54,7 @@ class TestClassic(TestCase):
                 },
                 u'message_id': 1,
                 u'chat': {
-                    u'type': u'user',
+                    u'type': u'group',
                     u'id': chat_id,
                     u'username': u'm_messiah',
                     u'first_name': u'Maxim',
@@ -96,10 +98,24 @@ class TestClassic(TestCase):
         self.assertEqual(True, bool(SESSIONS[1].dozor.dr_code.match("1f23b4")))
 
     def test_set_dzzzr_separate_chats(self):
-        self.auth()
-        response = self.send_message("/set_dzzzr http://localhost:5000/ spb_Captain 123456 bot botpassword", chat_id=2)
+        self.send_message("/set_dzzzr http://localhost:5000/ spb_Captain 123456 bot botpassword", chat_id=2)
+        response = self.auth()
         self.assertNotIn("/set_dzzzr", response)
         self.assertIn("/stop", response)
+
+    def test_set_dzzzr_stop_set_dzzzr(self):
+        self.auth()
+        self.send_message("/stop")
+        response = self.auth()
+        self.assertNotIn("/set_dzzzr", response)
+        self.assertIn("bot", response)
+
+    def test_set_dzzzr_stop_set_dzzzr_2(self):
+        self.send_message("/set_dzzzr http://localhost:5000/ spb_Captain 123456 bot botpassword", chat_id=2)
+        self.send_message("/stop", chat_id=2)
+        response = self.auth()
+        self.assertNotIn("/set_dzzzr", response)
+        self.assertIn("bot", response)
 
     def test_set_dzzzr_bad_password(self):
         response = self.send_message("/set_dzzzr http://localhost:5000/ spb_Captain 123456 bot wrongpassword")
