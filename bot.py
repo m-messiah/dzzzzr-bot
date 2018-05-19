@@ -48,7 +48,7 @@ class Bot(object):
                 del main.CREDENTIALS[self.dozor.credentials]
             if self.chat_id in main.SESSIONS:
                 del main.SESSIONS[self.chat_id]
-        except Exception as e:
+        except Exception:
             logging.warn(traceback.format_exc())
         return messages.BOT_STOP
 
@@ -127,7 +127,7 @@ class Bot(object):
         if "@" in command:
             return None
         try:
-          return getattr(self, command[1:], getattr(self.dozor, command[1:], self.not_found))(arguments)
+            return getattr(self, command[1:], getattr(self.dozor, command[1:], self.not_found))(arguments)
         except UnicodeEncodeError as e:  # pragma: no cover
             return self.not_found(None)
         except Exception as e:  # pragma: no cover
