@@ -20,7 +20,9 @@ https://paypal.me/muzafarov
 """
 BOT_HELLO = u"Привет!"
 
-DOZOR_HELP = u"""/set_dzzzr url captain pin login password - установить урл и учетные данные для движка DozoR.
+DOZOR_HELP = u"""/set_dzzzr БОЛЬШЕ НЕ РАБОТАЕТ.
+Бот не умеет в новый движок Дозора, хотя вы по-прежнему можете использовать его команды решения шифров.
+/set_dzzzr url captain pin login password - установить урл и учетные данные для движка DozoR.
 Если все коды имеют префикс игры (например 27d), то его можно указать здесь:
 /set_dzzzr url captain pin login password prefix
 и отправлять коды уже в сокращенном виде (12r3 = 27d12r3)
@@ -65,7 +67,7 @@ DOZOR_NEED_AUTH = u"Сначала надо войти в движок"
 DOZOR_NO_ANSWER = u"Нет ответа. Проверьте вручную."
 DOZOR_NO_CODE_RANKS = u"Коды сложности не найдены"
 DOZOR_SECTOR_CODES_TEMPL = u"%s (осталось %s): %s"
-DOZOR_SET_DZZZR_HELP = u"Использование:\n/set_dzzzr url captain pin login password [prefix] [regexp]"
+DOZOR_SET_DZZZR_HELP = u"/set_dzzzr отключено в связи с новой версией движка Дозора, в которую бот не умеет"
 DOZOR_SET_LITE_HELP = u"Использование:\n/set_lite url pin"
 DOZOR_TIME_ON_TEMPL = u"Время на уровне: %s, Осталось: %s"
 DOZOR_WELCOME_TEMPL = u"Добро пожаловать, %s"

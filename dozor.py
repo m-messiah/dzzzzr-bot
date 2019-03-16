@@ -116,25 +116,26 @@ class DozoR(object):
             return False, messages.DOZOR_BAD_PAGE_TEMPL % e
 
     def set_dzzzr(self, arguments):
-        try:
-            user_credentials = self._handle_set_dzzzr_arguments(arguments)
-        except Exception:
-            return messages.DOZOR_SET_DZZZR_HELP
+        return messages.DOZOR_SET_DZZZR_HELP
+        # try:
+        #     user_credentials = self._handle_set_dzzzr_arguments(arguments)
+        # except Exception:
+        #     return messages.DOZOR_SET_DZZZR_HELP
 
-        merged_credentials = "|".join((self.url, user_credentials['captain'], user_credentials['login']))
-        dup_message = utils.get_dup_session(self.chat_id, merged_credentials)
-        if dup_message:
-            return dup_message
+        # merged_credentials = "|".join((self.url, user_credentials['captain'], user_credentials['login']))
+        # dup_message = utils.get_dup_session(self.chat_id, merged_credentials)
+        # if dup_message:
+        #     return dup_message
 
-        is_authenticated, message = self._dzzzr_auth(user_credentials)
-        if not is_authenticated:
-            return message
+        # is_authenticated, message = self._dzzzr_auth(user_credentials)
+        # if not is_authenticated:
+        #     return message
 
-        self.enabled = True
-        self.classic = True
-        self.credentials = merged_credentials
-        main.CREDENTIALS[self.credentials] = self.chat_id
-        return messages.DOZOR_WELCOME_TEMPL % user_credentials['login']
+        # self.enabled = True
+        # self.classic = True
+        # self.credentials = merged_credentials
+        # main.CREDENTIALS[self.credentials] = self.chat_id
+        # return messages.DOZOR_WELCOME_TEMPL % user_credentials['login']
 
     def set_lite(self, arguments):
         arguments = arguments.split()
