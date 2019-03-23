@@ -5,22 +5,21 @@ INLINE_TEXT = "Inline mode not implemented"
 INLINE_DESCRIPTION = u"Inline-режим не реализован"
 
 BOT_NAME = "@DzzzzR_bot"
-BOT_VERSION = u"Версия: 3.2.4"
+BOT_VERSION = u"Версия: 3.2.5"
 BOT_SESSIONS_TEMPL = u"Сейчас используют:\n%s"
-BOT_COMMAND_NOT_FOUND = u"Команда не найдена. Используйте /help \nИли дайте денег автору, и он сделает такую команду"
+BOT_COMMAND_NOT_FOUND = u"Команда не найдена. Используйте /help \nИли сделайте такую команду (мой код на github)"
 BOT_START = u"Внимательно слушаю!"
 BOT_STOP = u"До новых встреч!"
 BOT_ABOUT = u"""Привет!
-Мой автор @m_messiah
 Мой код: https://github.com/m-messiah/dzzzzr-bot
-
-А еще принимаются пожертвования:
-http://yasobe.ru/na/m_messiah
-https://paypal.me/muzafarov
+Если хочется внести правки - мы открыты для пулл-реквестов.
 """
 BOT_HELLO = u"Привет!"
 
-DOZOR_HELP = u"""/set_dzzzr url captain pin login password - установить урл и учетные данные для движка DozoR.
+DOZOR_HELP = u"""Бот умеет работать только со старой версией движка DozoR.
+Если вы пользуетесь новой - авторизоваться не выйдет.
+
+/set_dzzzr url captain pin login password - установить урл и учетные данные для движка DozoR.
 Если все коды имеют префикс игры (например 27d), то его можно указать здесь:
 /set_dzzzr url captain pin login password prefix
 и отправлять коды уже в сокращенном виде (12r3 = 27d12r3)
