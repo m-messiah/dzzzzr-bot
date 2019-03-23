@@ -1,5 +1,5 @@
 # coding=utf-8
-import unittest
+from unittest import TestCase
 import sys
 import time
 import os.path
@@ -20,8 +20,7 @@ from webapp2_extras import json  # noqa E402
 from paste import httpserver  # noqa E402
 
 
-@unittest.skip("Disable old DozoR engine")
-class TestClassic(unittest.TestCase):
+class TestClassic(TestCase):
     def setUp(self):
         self.engine = Process(target=httpserver.serve, args=(dr_engine, ),
                               kwargs={'host': "127.0.0.1", 'port': "5000"})
